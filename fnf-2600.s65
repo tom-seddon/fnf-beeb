@@ -545,7 +545,7 @@ loc_F079:
 
 ;-------------------------------------------------------------------------
 
-do_display:
+do_display:     .block
 
                 lda #0
                 sta GRP1        ; graphics player 1
@@ -649,7 +649,7 @@ loc_F0B8:
                 nop
                 lda byte_87
                 jmp loc_F02E
-; End of function do_display
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -695,9 +695,9 @@ loc_F11B:
 
 ;-------------------------------------------------------------------------
 
-nullsub_1:
+nullsub_1:      .block
                 rts
-; End of function nullsub_1
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -706,7 +706,7 @@ nullsub_1:
 ;        A=position
 ; exit: _hpos set up
 
-prepare_object_hpos:
+prepare_object_hpos:.block
                 clc
                 adc #5
                 tay
@@ -735,7 +735,7 @@ loc_F153:
                 ora pl_hpos,x
                 sta pl_hpos,x
                 rts
-; End of function prepare_object_hpos
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -903,7 +903,7 @@ initial_values: .byte 1
 
 ;-------------------------------------------------------------------------
 
-initialise_memory:
+initialise_memory:.block
                 ldy #28
 
 loc_F21F:
@@ -913,7 +913,7 @@ loc_F21F:
                 dey
                 bpl loc_F21F
                 rts
-; End of function initialise_memory
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -953,7 +953,7 @@ pl_state_routine_msbs:.byte $F2,$F4,$F4,$F4,$F4,$F4,$F3,$F4,$F3,$F3,$F3,$F3,$F3
 
 ;-------------------------------------------------------------------------
 
-update_player_logic:
+update_player_logic:.block
                 lda byte_B3
                 and #1
                 tax
@@ -963,7 +963,7 @@ update_player_logic:
                 lda pl_state_routine_msbs,y
                 sta pn_state_routine_addr+1
                 jmp (pn_state_routine_addr)
-; End of function update_player_logic
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -1173,7 +1173,7 @@ locret_F3C5:
 
 ;-------------------------------------------------------------------------
 
-pn_state10:
+pn_state10:     .block
 
                 lda mi_xs
                 cmp #$80
@@ -1197,7 +1197,7 @@ pn_state10:
 pn_state11:
                 sta byte_DC
                 rts
-; End of function pn_state10
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -1413,7 +1413,7 @@ loc_F507:
 
 ;-------------------------------------------------------------------------
 
-sub_F51B:
+sub_F51B:       .block
                 lda pl_ys,x
                 bmi locret_F530
                 cmp #8
@@ -1429,11 +1429,11 @@ loc_F525:
 
 locret_F530:
                 rts
-; End of function sub_F51B
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-clamp_player_x:
+clamp_player_x: .block
                 lda pl_xs,x
                 ldy #7
                 cmp #7          ; minimum X
@@ -1449,7 +1449,7 @@ loc_F53F:
 
 locret_F545:
                 rts
-; End of function clamp_player_x
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -1457,7 +1457,7 @@ locret_F545:
 ; entry: X=player index
 ; exit: C=1 if on lily, C=0 if not on lily
 
-is_on_lily:
+is_on_lily:     .block
                 lda pl_xs,x
                 cmp #13
                 bcc clc_then_rts; taken if not on left lily
@@ -1477,11 +1477,11 @@ clc_then_rts:
 sec_then_rts:
                 sec
                 rts
-; End of function is_on_lily
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-update_tongues:
+update_tongues: .block
                 lda byte_B3
                 and #1
                 tax
@@ -1547,11 +1547,11 @@ activate_tongue:
 
 locret_F5B3:
                 rts
-; End of function update_tongues
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-update_player_physics:
+update_player_physics:.block
                 lda byte_DF
                 clc
                 adc #11
@@ -1602,7 +1602,7 @@ loc_F5F3:
                 dex
                 bpl loc_F5BF
                 rts
-; End of function update_player_physics
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -1615,7 +1615,7 @@ byte_F5FB:      .byte $3F
 
 ;-------------------------------------------------------------------------
 
-sub_F5FD:
+sub_F5FD:       .block
                 lda byte_B4
                 bmi locret_F62A
                 lda byte_B3
@@ -1751,11 +1751,11 @@ loc_F6A6:
 
 locret_F6BD:
                 rts
-; End of function sub_F5FD
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-sub_F6BE:
+sub_F6BE:       .block
                 ldy #0          ; Y=0 implies M0/PF collision
                 lda rCXP0FB_wNUSIZ0; R: D7 = collision M0/PF; D6 = collision M0/BL
                                    ; W: number-size player-missile 0
@@ -1795,11 +1795,11 @@ loc_F6EA:
 
 no_collision:
                 rts
-; End of function sub_F6BE
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-initialise_player_difficulty:
+initialise_player_difficulty:.block
                 lda SWCHB       ; Console switches
                                 ; +---+---+---+---+---+---+---+---+
                                 ; |Di1|Di0|   |   |Col|   |~GS|~GR|
@@ -1847,11 +1847,11 @@ loc_F716:
                 lda initial_p_xs,x
                 sta pl_xs,x
                 rts
-; End of function initialise_player_difficulty
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-sub_F71F:
+sub_F71F:       .block
                 lda byte_B3
                 lsr a
                 and #$1F
@@ -1872,14 +1872,14 @@ sub_F71F:
 loc_F73B:
                 inx
                 sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
-                lda initial_p_xs,x
+                lda initialise_player_difficulty.initial_p_xs,x
                 sta pl_xs,x
                 lda #2
                 sta unk_BF,x
 
 locret_F747:
                 rts
-; End of function sub_F71F
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -1902,7 +1902,7 @@ joystick_direction_by_inputs:.byte JoystickDirection_Invalid
 
 ;-------------------------------------------------------------------------
 
-handle_players_inputs:
+handle_players_inputs:.block
                 lda SWCHA       ; Joystick input:
                                 ; +--+--+--+--+--+--+--+--+
                                 ; |~R|~L|~D|~U|~R|~L|~D|~U|
@@ -1919,11 +1919,11 @@ handle_players_inputs:
                 pla
                 and #$F         ; A = P1 inputs
                 inx             ; X=1 - player 1
-; End of function handle_players_inputs
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-store_player_inputs:
+store_player_inputs:.block
                 cmp player_inputs,x
                 sta player_inputs,x
                 bne loc_F776
@@ -1941,11 +1941,11 @@ loc_F776:
                 and #$BF
                 sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
                 rts
-; End of function store_player_inputs
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-rnd:
+rnd:            .block
                 lda random_seed
                 asl a
                 asl a
@@ -1962,7 +1962,7 @@ rnd:
                 adc #149        ; (((seed<<4)+seed)<<3)+seed+149
                 sta random_seed
                 rts
-; End of function rnd
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -2009,7 +2009,7 @@ unk_F7A2:       .byte 0
 
 ;-------------------------------------------------------------------------
 
-prepare_display:
+prepare_display:.block
 
                 ldx #1          ; X=user index
 
@@ -2218,7 +2218,7 @@ loc_F8C4:
 
 loc_F8E1:
                 jmp apply_object_hmotions
-; End of function prepare_display
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -2237,7 +2237,7 @@ p1_colours:     .byte $32; 2
 
 ;-------------------------------------------------------------------------
 
-sub_F8F0:
+sub_F8F0:       .block
                 lda byte_B3
                 and #$3F
                 bne locret_F913
@@ -2262,22 +2262,22 @@ loc_F90F:
 
 locret_F913:
                 rts
-; End of function sub_F8F0
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-sub_F914:
+sub_F914:       .block
 
                 lda ch_sounds,x
                 bne loc_F931
-; End of function sub_F914
+                .endblock
 
 ;-------------------------------------------------------------------------
 
 ; Y = sound
 ; X = channel
 
-start_sound:
+start_sound:    .block
                 sty ch_sounds,x
                 lda audio_counter_by_sound-1,y
                 sta ch_audio_counters,x
@@ -2296,7 +2296,7 @@ start_sound:
                 sta AUDC0,x
                 clc
                 rts
-; End of function start_sound
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -2306,17 +2306,17 @@ loc_F931:
 
 ;-------------------------------------------------------------------------
 
-update_sounds:
+update_sounds:  .block
                 ldx #1
                 jsr update_sound_channel; X=channel number, 0 or 1
                 dex
-; End of function update_sounds
+                .endblock
 
 ;-------------------------------------------------------------------------
 
 ; X=channel number, 0 or 1
 
-update_sound_channel:
+update_sound_channel:.block
                 ldy ch_sounds,x
                 beq locret_F956 ; taken if no sound
                 dec ch_audio_counters,x
@@ -2337,7 +2337,7 @@ disable_audio_channel:
 
 locret_F956:
                 rts
-; End of function update_sound_channel
+                .endblock
 
 ;-------------------------------------------------------------------------
 
@@ -2597,7 +2597,7 @@ audio_counter_by_sound:.byte 23
 
 ;-------------------------------------------------------------------------
 
-sub_FA6A:
+sub_FA6A:       .block
                 tya
                 pha
                 ldy #1
@@ -2606,11 +2606,11 @@ sub_FA6A:
                 pla
                 tay
                 rts
-; End of function sub_FA6A
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-play_tongue_sound:
+play_tongue_sound:.block
                 tya
                 pha
                 ldy #2
@@ -2619,11 +2619,11 @@ play_tongue_sound:
                 pla
                 tay
                 rts
-; End of function play_tongue_sound
+                .endblock
 
 ;-------------------------------------------------------------------------
 
-sub_FA7E:
+sub_FA7E:       .block
                 lda byte_B3
                 and #1
                 tax
@@ -2649,7 +2649,7 @@ loc_FA99:
 
 locret_FAA6:
                 rts
-; End of function sub_FA7E
+                .endblock
 
 ;-------------------------------------------------------------------------
 
