@@ -1,0 +1,4025 @@
+
+;-------------------------------------------------------------------------
+
+; enum JoystickDirection
+JoystickDirection_Right:= 0
+JoystickDirection_RightUp:= 1
+JoystickDirection_Up:= 2
+JoystickDirection_LeftUp:= 3
+JoystickDirection_Left:= 4
+JoystickDirection_LeftDown:= 5
+JoystickDirection_Down:= 6
+JoystickDirection_RightDown:= 7
+JoystickDirection_Invalid:= $FF
+
+; Segment type: Regular
+                ;.segment RAM
+VSYNC:          .fill 1
+                ; vertical sync set-clear
+                ; D1: 1 = start vertical sync
+                ;     0 = stop vertical sync
+VBLANK:         .fill 1
+                ; vertical blank set-clear
+                ; D7: 1 = start vertical blank
+                ;     0 = stop vertical blank
+                ; D6: 1 = enable I4 I5 latches
+                ;     0 = disable I4 I5 latches
+                ; D1: 1 = dump I6 I1 I2 I3 ports to ground
+                ;     0 = remove dump path to ground
+WSYNC:          .fill 1
+                ; wait for leading edge of horizontal blank
+unk_3:          .fill 1
+rCXP0FB_wNUSIZ0:.fill 1
+                ; R: D7 = collision M0/PF; D6 = collision M0/BL
+                ; W: number-size player-missile 0
+rCXM1FB_wNUSIZ1:.fill 1
+                ; R: D7 = collision M1/PF; D6 = collision M1/BL
+                ; W: number-size player-missile 1
+COLUP0:         .fill 1
+                ; colour-lum player 0
+COLUP1:         .fill 1
+                ; colour-lum player 1
+COLUPF:         .fill 1
+                ; colour-lum playfield
+COLUBK:         .fill 1
+                ; colour-lum background
+CTRLPF:         .fill 1
+                ; control playfield ball size & collisions
+                ; D5,D4: ball size: %00 = 1 clock
+                ;                   %01 = 2 clocks
+                ;                   %10 = 4 clocks
+                ;                   %11 = 8 clocks
+                ; D2: PFP: 1 = playfield drawn on top of players
+                ;          0 = players drawn on top of playfield
+                ; D1: SCORE: 1 = left/right halves have player colours
+                ; D0: REF: 1 = reflect playfield
+rINPT3_wREFP0:  .fill 1
+                ; reflect player 0
+                ; D3: 1 = reflect player 0
+rINPT4_wREFP1:  .fill 1
+                ; reflect player 1
+                ; D3: 1 = reflect player 1
+PF0:            .fill 1
+                ; playfield register byte 0
+PF1:            .fill 1
+                ; playfield register byte 1
+PF2:            .fill 1
+                ; playfield register byte 2
+RESP0:          .fill 1
+RESP1:          .fill 1; reset player 1
+RESM0:          .fill 1
+RESM1:          .fill 1
+RESBL:          .fill 1
+AUDC0:          .fill 1
+                .fill 1
+AUDF0:          .fill 1
+                .fill 1
+AUDV0:          .fill 1
+                .fill 1
+GRP0:           .fill 1
+                ; graphics player 0
+GRP1:           .fill 1
+                ; graphics player 1
+ENAM0:          .fill 1
+                ; graphics (enable) missile 0
+                ; D1: 1 = enable
+                ;     0 = disable
+ENAM1:          .fill 1
+                ; graphics (enable) missile 1
+                ; D1: 1 = enable
+                ;     0 = disable
+ENABL:          .fill 1
+                ; graphics (enable) ball
+                ; D1: 1 = enable
+                ;     0 = disable
+HMP0:           .fill 1
+HMP1:           .fill 1
+HMM0:           .fill 1
+HMM1:           .fill 1
+HMBL:           .fill 1
+                .fill 1
+VDELP1:         .fill 1
+                ; vertical delay player 1
+                .fill 1
+                .fill 1
+                .fill 1
+HMOVE:          .fill 1
+                ; apply horizontal motion
+                .fill 1
+CXCLR:          .fill 1
+                ; clear collision latches
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+pf_eor_value:   .fill 1
+                ; value EORd with playfield data
+byte_81:        .fill 1
+                .fill 1
+byte_83:        .fill 1
+                .fill 1
+scanline_counter:.fill 1
+                ; temp storage for Y register
+                .fill 1
+byte_87:        .fill 1
+pl_colours:     .fill 2
+p0_left_digit_ptr:.fill 2
+p0_right_digit_ptr:.fill 2
+p1_left_digit_ptr:.fill 2
+p1_right_digit_ptr:.fill 2
+pf0_data_ptr:   .fill 2
+pf1_data_ptr:   .fill 2
+pf2_data_ptr:   .fill 2
+byte_98:        .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+byte_9C:        .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+p0_sprite_row_selector_ptr:.fill 2
+p1_sprite_row_selector_ptr:.fill 2
+enam0_data_ptr: .fill 2
+enam1_data_ptr: .fill 2
+enabl_data_ptr: .fill 2
+grp0_data_ptr:  .fill 2
+grp1_data_ptr:  .fill 2
+pl_hpos:        .fill 2
+m0_hpos:        .fill 1
+m1_hpos:        .fill 1
+b_hpos:         .fill 1
+byte_B3:        .fill 1
+byte_B4:        .fill 1
+pn_state_routine_addr:.fill 2
+byte_B7:        .fill 1
+byte_B8:        .fill 1
+unk_B9:         .fill 1
+                .fill 1
+pl_scores:      .fill 2
+unk_BD:         .fill 1
+unk_BE:         .fill 1
+unk_BF:         .fill 1
+                .fill 1
+unk_C1:         .fill 1
+                .fill 1
+pl_flags:       .fill 2
+                ; b7 = player difficulty (0=pro 1=amateur)
+pl_states:      .fill 2
+pl_tongue_counters:.fill 2
+unk_C9:         .fill 1
+                .fill 1
+pl_dxs:         .fill 2
+mi_visibles:    .fill 2
+pl_dys:         .fill 2
+byte_D1:        .fill 1
+                .fill 1
+pl_xs:          .fill 2
+mi_xs:          .fill 2
+pl_ys:          .fill 2
+mi_ys:          .fill 2
+byte_DB:        .fill 1
+byte_DC:        .fill 1
+pl_joystick_fire:.fill 2
+byte_DF:        .fill 1
+p0_joystick_direction:.fill 1
+p1_joystick_direction:.fill 1
+player_inputs:  .fill 1
+                .fill 1
+random_seed:    .fill 1
+byte_E5:        .fill 1
+unk_E6:         .fill 1
+                .fill 1
+ch_sounds:      .fill 2
+ch_audio_counters:.fill 2
+unk_EC:         .fill 1
+                .fill 1
+sound_routine_temp:.fill 2
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+unk_F6:         .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+; end of 'RAM'
+
+; Segment type: Regular
+                ;.segment RIOT
+* = $280
+SWCHA:          .fill 1; Joystick input:
+                ; +--+--+--+--+--+--+--+--+
+                ; |~R|~L|~D|~U|~R|~L|~D|~U|
+                ; +--+--+--+--+--+--+--+--+
+                ;  \----|----/ \----|----/
+                ;       P0          P1
+Swacnt:         .fill 1
+SWCHB:          .fill 1
+                ; Console switches
+                ; +---+---+---+---+---+---+---+---+
+                ; |Di1|Di0|   |   |Col|   |~GS|~GR|
+                ; +-+-+-+-+---+---+-+-+---+-+-+-+-+
+                ;   |   |           |       |   |
+                ;   |   |           |       |   +--- 0 = game reset
+                ;   |   |           |       +------- 0 = game select
+                ;   |   |           +--------------- 0 = B&W, 1 = colour
+                ;   |   +--------------------------- 0 = P0 amateur, 1 = P0 pro
+                ;   +------------------------------- 0 = P1 amateur, 1 = P1 pro
+Swbcnt:         .fill 1
+Intim:          .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+Tim1t:          .fill 1; set 1 clock interval
+Tim8t:          .fill 1; set 8 clock interval
+Tim64t:         .fill 1; set 64 clock interval
+T1024t:         .fill 1; set 1024 clock interval
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+; end of 'RIOT'
+
+;-------------------------------------------------------------------------
+
+; Segment type: Pure code
+                ;.segment ROM
+* = $F000
+
+loc_F000:
+                sty scanline_counter; temp storage for Y register
+                lda (enabl_data_ptr),y
+                asl a
+                sta ENABL       ; graphics (enable) ball
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                lda (enam0_data_ptr),y
+                sta ENAM0       ; graphics (enable) missile 0
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                lda (enam1_data_ptr),y
+                sta ENAM1       ; graphics (enable) missile 1
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                lda (p0_sprite_row_selector_ptr),y
+                bpl loc_F057
+                lda (p1_sprite_row_selector_ptr),y
+                bpl loc_F066
+                ldy byte_83
+                lda (grp0_data_ptr),y
+                sta GRP0        ; graphics player 0
+                dey
+                lda (grp0_data_ptr),y
+
+loc_F020:
+                tax
+                lda (grp1_data_ptr),y
+                sta GRP1        ; graphics player 1
+                dey
+                lda (grp1_data_ptr),y
+
+loc_F028:
+                sta byte_81
+                sty byte_83
+                ldy scanline_counter; temp storage for Y register
+
+loc_F02E:
+                lda (pf2_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF2         ; playfield register byte 2
+                lda (pf1_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF1         ; playfield register byte 1
+                lda (pf0_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF0         ; playfield register byte 0
+                stx GRP0        ; graphics player 0
+                ldx unk_FEB5,y
+                lda byte_98,x
+                sta COLUBK      ; colour-lum background
+                lda byte_9C,x
+                sta COLUPF      ; colour-lum playfield
+                lda byte_81
+                sta GRP1        ; graphics player 1
+                dey
+                bne loc_F000
+                jmp loc_F106
+
+;-------------------------------------------------------------------------
+
+loc_F057:
+                lda (p1_sprite_row_selector_ptr),y
+                bpl loc_F079
+                ldy byte_83
+                lda #0
+                sta GRP0        ; graphics player 0
+                dey
+                nop
+                nop
+                bne loc_F020
+
+loc_F066:
+                ldy byte_83
+                lda (grp0_data_ptr),y
+                sta GRP0        ; graphics player 0
+                dey
+                lda (grp0_data_ptr),y
+
+loc_F06F:
+                tax
+                lda #0
+                sta GRP1        ; graphics player 1
+                dey
+                nop
+                nop
+                bne loc_F028
+
+loc_F079:
+                ldy byte_83
+                lda #0
+                sta GRP0        ; graphics player 0
+                dey
+                nop
+                nop
+                jmp loc_F06F
+
+;-------------------------------------------------------------------------
+
+do_display:
+
+                lda #0
+                sta GRP1        ; graphics player 1
+                sta GRP0        ; graphics player 0
+                sta ENAM0       ; graphics (enable) missile 0
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                sta ENAM1       ; graphics (enable) missile 1
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                sta ENABL       ; graphics (enable) ball
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                sta PF0         ; playfield register byte 0
+                sta PF1         ; playfield register byte 1
+                sta PF2         ; playfield register byte 2
+                sta CTRLPF      ; control playfield ball size & collisions
+                                ; D5,D4: ball size: %00 = 1 clock
+                                ;                   %01 = 2 clocks
+                                ;                   %10 = 4 clocks
+                                ;                   %11 = 8 clocks
+                                ; D2: PFP: 1 = playfield drawn on top of players
+                                ;          0 = players drawn on top of playfield
+                                ; D1: SCORE: 1 = left/right halves have player colours
+                                ; D0: REF: 1 = reflect playfield
+                lda byte_87
+                sta COLUBK      ; colour-lum background
+                ldx #4
+                clc
+
+loc_F0A0:
+                lda pf0_data_ptr,x
+                adc #10
+                sta pf0_data_ptr,x
+                dex
+                dex
+                bpl loc_F0A0
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda #0
+                sta VBLANK      ; vertical blank set-clear
+                                ; D7: 1 = start vertical blank
+                                ;     0 = stop vertical blank
+                                ; D6: 1 = enable I4 I5 latches
+                                ;     0 = disable I4 I5 latches
+                                ; D1: 1 = dump I6 I1 I2 I3 ports to ground
+                                ;     0 = remove dump path to ground
+                ldy #4
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                sta WSYNC       ; wait for leading edge of horizontal blank
+
+loc_F0B6:
+                ldx #3
+
+loc_F0B8:
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda pl_colours
+                sta COLUPF      ; colour-lum playfield
+                lda (p0_left_digit_ptr),y
+                eor (p0_right_digit_ptr),y
+                sta PF1         ; playfield register byte 1
+                jsr nullsub_1
+                nop
+                lda pl_colours+1
+                sta COLUPF      ; colour-lum playfield
+                lda (p1_left_digit_ptr),y
+                eor (p1_right_digit_ptr),y
+                sta PF1         ; playfield register byte 1
+                dex
+                bne loc_F0B8
+                dey
+                bpl loc_F0B6
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda #0
+                sta PF1         ; playfield register byte 1
+                tax
+                sta byte_81
+                lda #$31        ; ball = 8 clocks
+                                ; players on top of playfield
+                                ; playfield is reflected
+                sta CTRLPF      ; control playfield ball size & collisions
+                                ; D5,D4: ball size: %00 = 1 clock
+                                ;                   %01 = 2 clocks
+                                ;                   %10 = 4 clocks
+                                ;                   %11 = 8 clocks
+                                ; D2: PFP: 1 = playfield drawn on top of players
+                                ;          0 = players drawn on top of playfield
+                                ; D1: SCORE: 1 = left/right halves have player colours
+                                ; D0: REF: 1 = reflect playfield
+                ldy #147
+                sty byte_83
+                ldy #74
+                sty scanline_counter; temp storage for Y register
+                sta WSYNC           ; wait for leading edge of horizontal blank
+                lda byte_87
+                sta COLUPF      ; colour-lum playfield
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                jsr nullsub_1
+                jsr nullsub_1
+                jsr nullsub_1
+                nop
+                lda byte_87
+                jmp loc_F02E
+; End of function do_display
+
+;-------------------------------------------------------------------------
+
+loc_F106:
+                ldx #4
+                sec
+                lda #0
+                sta GRP1        ; graphics player 1
+                sta GRP0        ; graphics player 0
+
+loc_F10F:
+                lda pf0_data_ptr,x
+                sbc #10
+                sta pf0_data_ptr,x
+                dex
+                dex
+                bpl loc_F10F
+                ldy #10
+
+loc_F11B:
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda (pf0_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF0         ; playfield register byte 0
+                lda (pf1_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF1         ; playfield register byte 1
+                lda (pf2_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF2         ; playfield register byte 2
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                dey
+                bpl loc_F11B
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda #2
+                sta VBLANK      ; vertical blank set-clear
+                                ; D7: 1 = start vertical blank
+                                ;     0 = stop vertical blank
+                                ; D6: 1 = enable I4 I5 latches
+                                ;     0 = disable I4 I5 latches
+                                ; D1: 1 = dump I6 I1 I2 I3 ports to ground
+                                ;     0 = remove dump path to ground
+
+;-------------------------------------------------------------------------
+
+nullsub_1:
+                rts
+; End of function nullsub_1
+
+;-------------------------------------------------------------------------
+
+; prepare hpos for object
+; entry: X=object index
+;        A=position
+; exit: _hpos set up
+
+prepare_object_hpos:
+                clc
+                adc #5
+                tay
+                and #$F
+                sta pl_hpos,x
+                tya
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                tay
+                clc
+                adc pl_hpos,x
+                cmp #$F
+                bcc loc_F153
+                sbc #$F
+                iny
+
+loc_F153:
+                eor #7
+                asl a
+                asl a
+                asl a
+                asl a
+                sty pl_hpos,x
+                ora pl_hpos,x
+                sta pl_hpos,x
+                rts
+; End of function prepare_object_hpos
+
+;-------------------------------------------------------------------------
+
+apply_object_hmotions:
+                ldx #4
+
+loc_F162:
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda pl_hpos,x
+                sta HMP0,x      ; fine-position object in question
+                and #$F         ; extract coarse-position bits
+                tay             ; Y=coarse position count
+
+loc_F16B:
+                dey
+                bpl loc_F16B
+                dex
+                sta RESP0+1,x   ; +1 to offset the DEX
+                bpl loc_F162
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                sta HMOVE       ; apply horizontal motion
+                rts
+
+;-------------------------------------------------------------------------
+
+main:
+                sei
+                cld
+
+debounce_reset:
+                lda SWCHB       ; Console switches
+                                ; +---+---+---+---+---+---+---+---+
+                                ; |Di1|Di0|   |   |Col|   |~GS|~GR|
+                                ; +-+-+-+-+---+---+-+-+---+-+-+-+-+
+                                ;   |   |           |       |   |
+                                ;   |   |           |       |   +--- 0 = game reset
+                                ;   |   |           |       +------- 0 = game select
+                                ;   |   |           +--------------- 0 = B&W, 1 = colour
+                                ;   |   +--------------------------- 0 = P0 amateur, 1 = P0 pro
+                                ;   +------------------------------- 0 = P1 amateur, 1 = P1 pro
+                lsr a           ; C=0 if game reset
+                bcc debounce_reset
+                ldy Intim
+                lda #0
+                tax
+
+clear_memory:
+                sta 0,x
+                txs
+                inx
+                bne clear_memory
+                sty random_seed ; random_seed???
+                jsr handle_players_inputs
+                jsr initialise_memory
+
+main_loop:
+                lda #30         ; 1608 us; 25.125 scanlines
+                sta Tim64t      ; set 64 clock interval
+                lda SWCHB       ; Console switches
+                                ; +---+---+---+---+---+---+---+---+
+                                ; |Di1|Di0|   |   |Col|   |~GS|~GR|
+                                ; +-+-+-+-+---+---+-+-+---+-+-+-+-+
+                                ;   |   |           |       |   |
+                                ;   |   |           |       |   +--- 0 = game reset
+                                ;   |   |           |       +------- 0 = game select
+                                ;   |   |           +--------------- 0 = B&W, 1 = colour
+                                ;   |   +--------------------------- 0 = P0 amateur, 1 = P0 pro
+                                ;   +------------------------------- 0 = P1 amateur, 1 = P1 pro
+                lsr a           ; extract reset button state
+                bcc main        ; taken if reset button pressed
+                jsr sub_F6BE
+                jsr prepare_display
+                inc byte_B3
+
+loc_F1A7:
+                lda Intim
+                bne loc_F1A7
+                ldx #3
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                stx VSYNC       ; start vertical sync
+; do 4 lines of vertical sync
+
+do_vertical_sync:
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                dex
+                bne do_vertical_sync
+                stx VSYNC       ; clear vertical sync
+                lda #48
+                sta Tim64t      ; vblank time = 2527.8 us; 39.5 scanlines
+                jsr handle_players_inputs
+                jsr update_player_physics
+                jsr update_player_logic
+                jsr update_tongues
+                jsr sub_F5FD
+                jsr sub_F8F0
+                jsr sub_FA7E
+                jsr update_sounds
+                sta CXCLR       ; clear collision latches
+
+wait_for_end_of_vblank:
+                lda Intim
+                bne wait_for_end_of_vblank
+                jsr do_display
+                jmp main_loop
+
+;-------------------------------------------------------------------------
+
+initial_addrs:  .byte VDELP1
+                ; vertical delay player 1
+                .byte COLUP0    ; colour-lum player 0
+                .byte COLUP1    ; colour-lum player 1
+                .byte pl_colours
+                .byte pl_colours+1
+                .byte byte_B8
+                .byte byte_B7
+                .byte unk_BD
+                .byte unk_BE
+                .byte pf0_data_ptr
+                .byte pf0_data_ptr+1
+                .byte pf1_data_ptr
+                .byte pf1_data_ptr+1
+                .byte pf2_data_ptr
+                .byte pf2_data_ptr+1
+                .byte p0_left_digit_ptr+1
+                .byte p0_right_digit_ptr+1
+                .byte p1_left_digit_ptr+1
+                .byte p1_right_digit_ptr+1
+                .byte enabl_data_ptr+1
+                .byte grp0_data_ptr+1
+                .byte grp1_data_ptr+1
+                .byte pl_ys
+                .byte pl_ys+1
+                .byte pl_xs
+                .byte pl_xs+1
+                .byte byte_DB
+                .byte byte_DC
+                .byte pl_flags+1; b7 = player difficulty (0=pro 1=amateur)
+initial_values: .byte 1
+                ; VDELP1
+                .byte 4         ; COLUP0
+                .byte $32       ; 2            ; COLUP1
+                .byte 6         ; p0_colour
+                .byte $36       ; 6            ; p1_colour
+                .byte $1A       ; b8
+                .byte 7         ; b7
+                .byte $A        ; bd
+                .byte $A        ; be
+                .word pf0_data  ; $92
+                .word pf1_data  ; $94
+                .word pf2_data  ; $96
+                .byte $FB       ; p0_left_digit_ptr+1
+                .byte $FB       ;             ; p0_right_digit_ptr+1
+                .byte $FB       ;             ; p1_left_digit_ptr+1
+                .byte $FB       ;             ; p1_right_digit_ptr+1
+                .byte $FE       ;             ; enabl_data_ptr+1
+                .byte $FC       ;             ; grp0_data_ptr+1
+                .byte $FC       ;             ; grp1_data_ptr+1
+                .byte 7         ; p0_y
+                .byte 7         ; p1_y
+                .byte $20
+                .byte $6E       ; n
+                .byte $B7       ;
+                .byte $B7       ;
+                .byte 8
+
+;-------------------------------------------------------------------------
+
+initialise_memory:
+                ldy #28
+
+loc_F21F:
+                lda initial_values,y
+                ldx initial_addrs,y
+                sta 0,x
+                dey
+                bpl loc_F21F
+                rts
+; End of function initialise_memory
+
+;-------------------------------------------------------------------------
+
+pl_state0_dxs:  .char 4, 2, 2, -2, -4, -6, 6, 6
+pl_state0_dys:  .byte 4, 6, 6, 6, 4, 2, 2, 2
+pl_state1a_dxs: .char 8, 4, 4, -4, -8, -$C, $C, $C
+pl_state1a_dys: .byte 8, $C, $C, $C, 8, 4, 4, 4
+pl_state1b_dxs: .char 11, 5, 5, -5, -11, -15, 15, 15
+pl_state1b_dys: .byte 11, 15, 15, 15, 11, 5, 5, 5
+byte_F25B:      .char $A, $D, $12, -$80
+byte_F25F:      .char -55, -37, -19, -1
+                .byte 0
+                .byte 0
+                .byte $81       ;
+                .byte $81       ;
+                .byte $81       ;
+                .byte $81       ;
+                .byte $6F       ; o
+                .byte $6F       ; o
+                .byte $6F       ; o
+                .byte $6F       ; o
+                .byte $5D       ; ]
+                .byte $5D       ; ]
+                .byte $5D       ; ]
+                .byte $5D       ; ]
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $4B       ; K
+                .byte $4B       ; K
+                .byte $4B       ; K
+                .byte $4B       ; K
+; f2a7 f444 f479 f4b6 f4c4 f4f3 f365 f40f f39a f39b f3c6 f3eb f3fe
+pl_state_routine_lsbs:.byte $A7,$44,$79,$B6,$C4,$F3,$65,$F,$9A,$9B,$C6,$ED,$FE
+pl_state_routine_msbs:.byte $F2,$F4,$F4,$F4,$F4,$F4,$F3,$F4,$F3,$F3,$F3,$F3,$F3
+
+;-------------------------------------------------------------------------
+
+update_player_logic:
+                lda byte_B3
+                and #1
+                tax
+                ldy pl_states,x
+                lda pl_state_routine_lsbs,y
+                sta pn_state_routine_addr
+                lda pl_state_routine_msbs,y
+                sta pn_state_routine_addr+1
+                jmp (pn_state_routine_addr)
+; End of function update_player_logic
+
+;-------------------------------------------------------------------------
+
+pn_state0:
+                lda byte_B4
+                bne loc_F320
+                jsr initialise_player_difficulty
+                jsr sub_F71F
+                ldy p0_joystick_direction,x
+                bmi loc_F304    ; taken if invalid direction
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                bmi loc_F2EF    ; taken if amateur difficulty
+                and #8
+                beq loc_F2C8
+                cpy #JoystickDirection_Up
+                beq loc_F2C7    ; taken if direction is Up
+                cpy #JoystickDirection_Down
+                bne loc_F2C8    ; taken if direction is not Down
+; direction is D
+                ldy #JoystickDirection_Left; translate D to L
+
+loc_F2C7:
+                iny             ; translate U to LU or L to LD
+
+loc_F2C8:
+                lda #1
+                sta pl_states,x
+                lda #27
+                sta unk_C1,x
+                sty unk_C9,x
+                lda pl_state0_dxs,y
+                sta pl_dxs,x
+                lda pl_state0_dys,y
+                sta pl_dys,x
+                inc pl_ys,x
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #$F7
+                cpy #JoystickDirection_Down
+                bcs loc_F2EC    ; taken if Down, RightDown
+                cpy #JoystickDirection_LeftUp
+                bcc loc_F2EC    ; taken if Right, RightUp, Up
+                ora #8
+
+loc_F2EC:
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+
+locret_F2EE:
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F2EF:
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                ldy #10
+                and #8
+                beq loc_F2F9
+                ldy #-10
+
+loc_F2F9:
+                sty pl_dxs,x
+                lda #26
+                sta pl_dys,x
+                lda #7
+                sta pl_states,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F304:
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #$40
+                beq locret_F2EE
+                lda byte_B3
+                and #$E
+                bne locret_F2EE
+                dec unk_BF,x
+                bne locret_F2EE
+                jsr rnd
+                and #7
+                clc
+                adc #1
+                sta unk_BF,x
+                bpl loc_F2EF
+
+loc_F320:
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                ora #2
+                and #$F7
+                ldy #20
+                dex
+                beq loc_F32F
+                ora #8
+                ldy #236
+
+loc_F32F:
+                sta pl_flags+1,x; b7 = player difficulty (0=pro 1=amateur)
+                sty pl_dxs+1,x
+                lda pl_xs+1,x
+                inx
+                beq loc_F33D
+                lda #148
+                sec
+                sbc pl_xs,x
+
+loc_F33D:
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                tay
+                lda byte_F35C,y
+                sta pl_dys,x
+                lda #6
+                sta pl_states,x
+                txa
+                eor #1
+                tay
+                lda pl_states,y
+                cmp #6
+                bne locret_F2EE
+                ldy #6
+                jsr start_sound ; Y = sound
+                                ; X = channel
+
+locret_F35B:
+                rts
+
+;-------------------------------------------------------------------------
+
+byte_F35C:      .byte 10
+                .byte 11
+                .byte 12
+                .byte 13
+                .byte 14
+                .byte 15
+                .byte 16
+                .byte 17
+                .byte 18
+
+;-------------------------------------------------------------------------
+
+pn_state6:
+                lda pl_dxs,x
+                beq loc_F37B
+                lda pl_xs,x
+                cmp #147
+                bcs loc_F37B
+                jsr sub_F51B
+                lda byte_B3
+                and #2
+                bne locret_F35B
+                dec pl_dys,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F37B:
+                lda #0
+                sta pl_dys,x
+                sta pl_ys,x
+                txa
+                eor #1
+                tay
+                lda pl_states,y
+                cmp #6
+                bne locret_F35B
+                lda pl_ys,y
+                bne locret_F35B
+                lda #9
+                sta pl_states
+                lda #8
+                sta pl_states+1
+                rts
+
+;-------------------------------------------------------------------------
+
+pn_state8:
+                rts
+
+;-------------------------------------------------------------------------
+
+pn_state9:
+                lda mi_ys
+                ora mi_ys+1
+                bne locret_F35B
+                lda #$A
+                sta pl_states
+                lda #$80
+                sta byte_B4
+                lda #$FF
+                sta COLUP0      ; colour-lum player 0
+                sta COLUP1      ; colour-lum player 1
+                lda pl_flags    ; b7 = player difficulty (0=pro 1=amateur)
+                and #$F7
+                sta pl_flags    ; b7 = player difficulty (0=pro 1=amateur)
+                lda #155
+                sta mi_xs
+                lda #56
+                sta mi_ys
+                lda #$FA
+                sta mi_visibles
+                lda #0
+                sta byte_D1
+
+locret_F3C5:
+                rts
+
+;-------------------------------------------------------------------------
+
+pn_state10:
+
+                lda mi_xs
+                cmp #$80
+                bcs locret_F3C5
+                lda #$B
+                sta pl_states
+                lda #138
+                sta pl_xs
+                lda #146
+                sta pl_xs+1
+                lda #60
+                sta pl_ys
+                sta pl_ys+1
+                lda #250
+                sta pl_dxs
+                sta pl_dxs+1
+                lda #147
+                sta byte_DB
+                lda #165
+
+pn_state11:
+                sta byte_DC
+                rts
+; End of function pn_state10
+
+;-------------------------------------------------------------------------
+
+                lda pl_xs
+                cmp #72
+                bcs locret_F3C5
+                lda #12
+                sta pl_states
+                lda #0
+                sta pl_dxs
+                sta pl_dxs+1
+                rts
+
+;-------------------------------------------------------------------------
+
+pn_state12:
+                lda mi_visibles
+                bne locret_F3C5
+                lda #0
+                sta mi_ys
+                lda #8
+                sta pl_states
+                rts
+
+;-------------------------------------------------------------------------
+
+unk_F40B:       .byte $20
+                .byte $2B       ; +
+unk_F40D:       .byte $62; b
+                .byte $6E       ; n
+
+;-------------------------------------------------------------------------
+
+pn_state7:
+                jsr sub_F51B
+                jsr clamp_player_x
+                dec pl_dys,x
+                lda pl_ys,x
+                cmp #8
+                bcs locret_F478
+                lda #7
+                sta pl_ys,x
+                lda #0
+                sta pl_states,x
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                eor #8
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                ldy unk_F40B,x
+                and #8
+                beq loc_F435
+                ldy unk_F40D,x
+
+loc_F435:
+                sty pl_xs,x
+                lda #$B7
+                sta byte_DB,x
+                lda #0
+                sta pl_dxs,x
+                sta pl_dys,x
+                sta pl_tongue_counters,x
+                rts
+
+;-------------------------------------------------------------------------
+
+pn_state1:
+                jsr sub_F51B
+                jsr clamp_player_x
+                dec unk_C1,x
+                beq loc_F474
+                lda unk_C1,x
+                ldy unk_C9,x
+                cmp #23
+                bne loc_F462
+                lda pl_state1a_dxs,y
+                sta pl_dxs,x
+                lda pl_state1a_dys,y
+                sta pl_dys,x
+                bne loc_F470
+
+loc_F462:
+                cmp #19
+                bne loc_F470
+                lda pl_state1b_dxs,y
+                sta pl_dxs,x
+                lda pl_state1b_dys,y
+                sta pl_dys,x
+
+loc_F470:
+                lda p0_joystick_direction,x
+                bpl locret_F478
+
+loc_F474:
+                lda #2
+                sta pl_states,x
+
+locret_F478:
+                rts
+
+;-------------------------------------------------------------------------
+
+pn_state2:
+                jsr sub_F51B
+                jsr clamp_player_x
+                dec pl_dys,x
+                lda pl_ys,x
+                cmp #8
+                bcs locret_F478
+                lda #7
+                sta pl_ys,x
+                lda #0
+                sta pl_states,x
+                lda #$B7
+                sta byte_DB,x
+                lda #0
+                sta pl_dxs,x
+                sta pl_dys,x
+                jsr is_on_lily  ; check if player is on lily
+                                ; entry: X=player index
+                                ; exit: C=1 if on lily, C=0 if not on lily
+                bcs locret_F4B5
+                lda #3
+                sta pl_states,x
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                ora #2
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda #-12
+                sta pl_dys,x
+                lda #0
+                sta pl_tongue_counters,x
+                ldy #3
+                jsr start_sound ; Y = sound
+                                ; X = channel
+
+locret_F4B5:
+                rts
+
+;-------------------------------------------------------------------------
+
+pn_state3:
+                lda pl_ys,x
+                bne locret_F4B5
+                sta pl_dys,x
+                lda #23
+                sta unk_C1,x
+                lda #4
+                sta pl_states,x
+
+pn_state4:
+                dec unk_C1,x
+                beq loc_F4D6
+                ldy unk_C1,x
+                lda byte_F25F+3,y
+                beq loc_F4D3
+                sta byte_DB,x
+                lda #9
+
+loc_F4D3:
+                sta pl_ys,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F4D6:
+                lda #5
+                sta pl_states,x
+                lda #4
+                sta pl_ys,x
+                lda #$B7
+                sta byte_DB,x
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                eor #8
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                ldy #4
+                and #8
+                beq loc_F4F0
+                ldy #$FC
+
+loc_F4F0:
+                sty pl_dxs,x
+
+locret_F4F2:
+                rts
+
+;-------------------------------------------------------------------------
+
+pn_state5:; check if player is on lily
+                jsr is_on_lily  ;
+                                ; entry: X=player index
+                                ; exit: C=1 if on lily, C=0 if not on lily
+                bcc locret_F4F2
+                lda #0
+                sta pl_states,x
+                lda pl_dxs,x
+                rol pl_dxs,x
+                ror a
+                dex
+                beq loc_F507
+                rol pl_dxs+1,x
+                ror a
+
+loc_F507:
+                inx
+                adc pl_xs,x
+                sta pl_xs,x
+                lda #7
+                sta pl_ys,x
+                lda #0
+                sta pl_dxs,x
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #$FD
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                rts
+
+;-------------------------------------------------------------------------
+
+sub_F51B:
+                lda pl_ys,x
+                bmi locret_F530
+                cmp #8
+                bmi locret_F530
+                ldy #$FF
+
+loc_F525:
+                iny
+                cmp byte_F25B,y
+                bcs loc_F525
+                lda byte_F25F,y
+                sta byte_DB,x
+
+locret_F530:
+                rts
+; End of function sub_F51B
+
+;-------------------------------------------------------------------------
+
+clamp_player_x:
+                lda pl_xs,x
+                ldy #7
+                cmp #7          ; minimum X
+                bcc loc_F53F    ; taken if X<minimum - set X to minimum
+                cmp #144        ; maximum X+1
+                bcc locret_F545 ; taken if X<maximum - leave X unmodified
+                ldy #143        ; maximum X
+
+loc_F53F:
+                sty pl_xs,x
+                lda #0
+                sta pl_dxs,x
+
+locret_F545:
+                rts
+; End of function clamp_player_x
+
+;-------------------------------------------------------------------------
+
+; check if player is on lily
+; entry: X=player index
+; exit: C=1 if on lily, C=0 if not on lily
+
+is_on_lily:
+                lda pl_xs,x
+                cmp #13
+                bcc clc_then_rts; taken if not on left lily
+                cmp #68
+                bcc sec_then_rts; taken if on left lily
+                cmp #82
+                bcc clc_then_rts; taken if not on right lily
+                cmp #137
+                bcc sec_then_rts; taken if on right lily
+
+clc_then_rts:
+                clc
+                rts
+
+;-------------------------------------------------------------------------
+
+sec_then_rts:
+                sec
+                rts
+; End of function is_on_lily
+
+;-------------------------------------------------------------------------
+
+update_tongues:
+                lda byte_B3
+                and #1
+                tax
+                lda pl_tongue_counters,x
+                beq loc_F568
+                dec pl_tongue_counters,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F568:
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #$C0
+                beq loc_F59B
+                ldy #1
+
+loc_F570:
+                lda pl_ys,x
+                sec
+                sbc mi_ys,y
+                clc
+                adc #1
+                cmp #5
+                bcs loc_F598
+                lda mi_xs,y
+                sbc pl_xs,x
+                cmp #6
+                bcc loc_F598
+                pha
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                pla
+                bcs loc_F594
+                sbc #5
+                eor #$FF
+
+loc_F594:
+                cmp #$F6
+                bcs activate_tongue
+
+loc_F598:
+                dey
+                beq loc_F570
+
+loc_F59B:
+                ldy pl_joystick_fire,x; Y=old fire state
+                lda rINPT4_wREFP1,x   ; read joystick fire button
+                sta pl_joystick_fire,x; save state
+                bmi locret_F5B3       ; taken if not pressed
+                tya                   ; A=old fire state
+                bpl locret_F5B3       ; taken if previously pressed
+
+activate_tongue:
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #2
+                bne locret_F5B3 ; taken if tongue already out?
+                lda #8
+                sta pl_tongue_counters,x
+                jsr play_tongue_sound
+
+locret_F5B3:
+                rts
+; End of function update_tongues
+
+;-------------------------------------------------------------------------
+
+update_player_physics:
+                lda byte_DF
+                clc
+                adc #11
+                and #15
+                sta byte_DF
+                ldx #3
+
+loc_F5BF:
+                lda pl_dxs,x
+                clc
+                adc byte_DF
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                eor #8
+                sec
+                sbc #8
+                clc
+                adc pl_xs,x
+                cmp #156
+                bcs loc_F5D8
+                sta pl_xs,x
+                bcc loc_F5DC
+
+loc_F5D8:
+                lda #0
+                sta pl_dxs,x
+
+loc_F5DC:
+                lda pl_dys,x
+                clc
+                adc byte_DF
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                eor #8
+                sec
+                sbc #8
+                clc
+                adc pl_ys,x
+                cmp #74
+                bcs loc_F5F3
+                sta pl_ys,x
+
+loc_F5F3:
+                dex
+                bpl loc_F5BF
+                rts
+; End of function update_player_physics
+
+;-------------------------------------------------------------------------
+
+byte_F5F7:      .byte $10
+                .byte $20
+byte_F5F9:      .byte $39
+                .byte $31
+byte_F5FB:      .byte $3F
+                .byte $F
+
+;-------------------------------------------------------------------------
+
+sub_F5FD:
+                lda byte_B4
+                bmi locret_F62A
+                lda byte_B3
+                lsr a
+                lsr a
+                lsr a
+                and #1
+                tax
+                lda pl_flags    ; b7 = player difficulty (0=pro 1=amateur)
+                ora pl_flags+1  ; b7 = player difficulty (0=pro 1=amateur)
+                asl a
+                lda #0
+                rol a
+                tay
+                lda mi_visibles,x
+                bne loc_F62B
+                lda mi_ys,x
+                beq loc_F64A
+                lda #0
+                sta mi_ys,x
+                sta byte_D1,x
+                jsr rnd
+                and #7
+                clc
+                adc #2
+                sta unk_B9,x
+
+locret_F62A:
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F62B:
+                lda mi_ys,x
+                cmp byte_F5F7,y
+                bcs loc_F636
+                lda #0
+                bpl loc_F63D
+
+loc_F636:
+                cmp byte_F5F9,y
+                bcc loc_F64A
+                lda #$80
+
+loc_F63D:
+                eor byte_D1,x
+                bpl loc_F64A
+                lda byte_D1,x
+                eor #$FF
+                sta byte_D1,x
+                asl a
+                ror byte_D1,x
+
+loc_F64A:
+                lda byte_B3
+                and #7
+                bne locret_F6BD
+                dec unk_B9,x
+                bpl locret_F6BD
+                lda mi_ys,x
+                bne loc_F688
+                lda byte_B4
+                bne locret_F6BD
+                jsr rnd
+                and #$F
+                clc
+                adc #6
+                lsr a
+                pha
+                lda #0
+                bcc loc_F670
+                pla
+                sbc #19
+                pha
+                lda #154
+
+loc_F670:
+                sta mi_xs,x
+                pla
+                sta mi_visibles,x
+
+loc_F675:
+                jsr rnd
+                and byte_F5FB,y
+                clc
+                adc byte_F5F7,y
+                cmp byte_F5F9,y
+                bcs loc_F675
+                sta mi_ys,x
+                bne loc_F6A6
+
+loc_F688:
+                jsr rnd
+                cmp #192
+                php
+                and #7
+                clc
+                adc #4
+                plp
+                ldy byte_B4
+                beq loc_F699
+                clc
+
+loc_F699:
+                ldy mi_visibles,x
+                bmi loc_F6A0
+                bcc loc_F6A4
+                clc
+
+loc_F6A0:
+                bcs loc_F6A4
+                eor #$FF
+
+loc_F6A4:
+                sta mi_visibles,x
+
+loc_F6A6:
+                jsr rnd
+                tay
+                and #$F
+                sec
+                sbc #8
+                sta byte_D1,x
+                tya
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                and #7
+                clc
+                adc #8
+                sta unk_B9,x
+
+locret_F6BD:
+                rts
+; End of function sub_F5FD
+
+;-------------------------------------------------------------------------
+
+sub_F6BE:
+                ldy #0          ; Y=0 implies M0/PF collision
+                lda rCXP0FB_wNUSIZ0; R: D7 = collision M0/PF; D6 = collision M0/BL
+                                   ; W: number-size player-missile 0
+                asl a              ; C=collision M0/PF; A7=collision M0/BL
+                bmi any_collision  ; taken if M0/BL collision
+                lda rCXM1FB_wNUSIZ1; R: D7 = collision M1/PF; D6 = collision M1/BL
+                                   ; W: number-size player-missile 1
+                asl a              ; C=collision M1/PF; A7=collision M1/BL
+                bpl no_collision   ; taken if no M0/BL collision
+                iny                ; Y=1 implies M1/BL collision
+
+any_collision:
+                tya             ; A: 0=M0/BL; 1=M1/BL
+                eor byte_B3     ; handle dynamic user/PM index assignment????
+                and #1          ; ensure just 0 or 1
+                tay             ; Y=colliding player index
+                ldx byte_E5
+                lda mi_xs,y
+                clc
+                sbc pl_xs,x
+                cmp #6
+                bcc no_collision
+                jsr sub_FA6A
+                lda pl_scores,x
+                sed
+                adc #2
+                cld
+                bcc loc_F6EA
+                lda #$99        ; clamp score at 99
+
+loc_F6EA:
+                sta pl_scores,x
+                ldx #0
+                stx mi_visibles,y
+                ldx #$50
+                stx mi_ys,y
+
+no_collision:
+                rts
+; End of function sub_F6BE
+
+;-------------------------------------------------------------------------
+
+initialise_player_difficulty:
+                lda SWCHB       ; Console switches
+                                ; +---+---+---+---+---+---+---+---+
+                                ; |Di1|Di0|   |   |Col|   |~GS|~GR|
+                                ; +-+-+-+-+---+---+-+-+---+-+-+-+-+
+                                ;   |   |           |       |   |
+                                ;   |   |           |       |   +--- 0 = game reset
+                                ;   |   |           |       +------- 0 = game select
+                                ;   |   |           +--------------- 0 = B&W, 1 = colour
+                                ;   |   +--------------------------- 0 = P0 amateur, 1 = P0 pro
+                                ;   +------------------------------- 0 = P1 amateur, 1 = P1 pro
+                rol a           ; C=player 1 difficulty
+                dex
+                beq loc_F6FD    ; taken if X was 1 on entry
+                rol a           ; C=player 0 difficulty
+
+loc_F6FD:
+                inx             ; restore X
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                bpl loc_F70B
+                bcc locret_F708 ; taken if amateur difficulty
+                and #$7F        ; mask off the pro bit
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+
+locret_F708:
+                rts
+
+;-------------------------------------------------------------------------
+
+initial_p_xs:   .byte 32
+                .byte 110
+
+;-------------------------------------------------------------------------
+
+loc_F70B:
+                bcs locret_F708
+                ora #$80
+                and #$F7
+                dex
+                bmi loc_F716
+                ora #8
+
+loc_F716:
+                inx
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda initial_p_xs,x
+                sta pl_xs,x
+                rts
+; End of function initialise_player_difficulty
+
+;-------------------------------------------------------------------------
+
+sub_F71F:
+                lda byte_B3
+                lsr a
+                and #$1F
+                bne locret_F747
+                rol a
+                tax
+                dec unk_BD,x
+                bne locret_F747
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #$40
+                bne locret_F747
+                ora #$40
+                and #$F7
+                dex
+                bmi loc_F73B
+                ora #8
+
+loc_F73B:
+                inx
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda initial_p_xs,x
+                sta pl_xs,x
+                lda #2
+                sta unk_BF,x
+
+locret_F747:
+                rts
+; End of function sub_F71F
+
+;-------------------------------------------------------------------------
+
+joystick_direction_by_inputs:.byte JoystickDirection_Invalid
+                .byte JoystickDirection_Invalid
+                .byte JoystickDirection_Invalid
+                .byte JoystickDirection_Invalid
+                .byte JoystickDirection_Invalid
+                .byte JoystickDirection_RightDown
+                .byte JoystickDirection_RightUp
+                .byte JoystickDirection_Right
+                .byte JoystickDirection_Invalid
+                .byte JoystickDirection_LeftDown
+                .byte JoystickDirection_LeftUp
+                .byte JoystickDirection_Left
+                .byte JoystickDirection_Invalid
+                .byte JoystickDirection_Down
+                .byte JoystickDirection_Up
+                .byte JoystickDirection_Invalid
+
+;-------------------------------------------------------------------------
+
+handle_players_inputs:
+                lda SWCHA       ; Joystick input:
+                                ; +--+--+--+--+--+--+--+--+
+                                ; |~R|~L|~D|~U|~R|~L|~D|~U|
+                                ; +--+--+--+--+--+--+--+--+
+                                ;  \----|----/ \----|----/
+                                ;       P0          P1
+                pha
+                lsr a
+                lsr a
+                lsr a
+                lsr a           ; A = P0 inputs
+                ldx #0          ; X=0 - player 0
+                jsr store_player_inputs
+                pla
+                and #$F         ; A = P1 inputs
+                inx             ; X=1 - player 1
+; End of function handle_players_inputs
+
+;-------------------------------------------------------------------------
+
+store_player_inputs:
+                cmp player_inputs,x
+                sta player_inputs,x
+                bne loc_F776
+                tay
+                lda joystick_direction_by_inputs,y
+                sta p0_joystick_direction,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F776:
+                lda #$F
+                sta unk_BD,x
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #$BF
+                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                rts
+; End of function store_player_inputs
+
+;-------------------------------------------------------------------------
+
+rnd:
+                lda random_seed
+                asl a
+                asl a
+                asl a
+                asl a           ; seed<<4
+                clc
+                adc random_seed ; (seed<<4)+seed
+                asl a
+                asl a
+                asl a           ; ((seed<<4)+seed)<<3
+                clc
+                adc random_seed ; (((seed<<4)+seed)<<3)+seed
+                clc
+                adc #149        ; (((seed<<4)+seed)<<3)+seed+149
+                sta random_seed
+                rts
+; End of function rnd
+
+;-------------------------------------------------------------------------
+
+unk_F796:       .byte 4
+                .byte 6
+                .byte 8
+                .byte 8
+                .byte 8
+                .byte 8
+                .byte 6
+                .byte 4
+unk_F79E:       .byte $C4
+                .byte $E4       ;
+                .byte $C6       ;
+                .byte $C6       ;
+unk_F7A2:       .byte 0
+                .byte 0
+                .byte 0
+                .byte $70       ; p
+                .byte $90       ;
+                .byte $90       ;
+                .byte $90       ;
+                .byte $70       ; p
+                .byte $92       ;
+                .byte $92       ;
+                .byte $92       ;
+                .byte $72       ; r
+                .byte $94       ;
+                .byte $94       ;
+                .byte $94       ;
+                .byte $72       ; r
+                .byte $96       ;
+                .byte $96       ;
+                .byte $96       ;
+                .byte $74       ; t
+                .byte $98       ;
+                .byte $98       ;
+                .byte $98       ;
+                .byte $74       ; t
+                .byte $9A       ;
+                .byte $9A       ;
+                .byte $9A       ;
+                .byte $74       ; t
+
+;-------------------------------------------------------------------------
+
+prepare_display:
+
+                ldx #1          ; X=user index
+
+prepare_scores_loop:
+                txa             ; A=user index
+                asl a           ; A=2*user index
+                asl a           ; A=4*user index
+                tay             ; Y=4*user index
+                lda pl_scores,x
+                and #$F         ; right digit of score
+                sta pl_hpos
+                asl a           ; 2*digit
+                asl a           ; 4*digit (and C=0)
+                adc pl_hpos     ; 5*digit
+                adc #50         ; +50 - right hand digit set
+                sta p0_right_digit_ptr,y
+                lda pl_scores,x
+                and #$F0        ; 16*left digit of score
+                lsr a           ; 8*digit
+                lsr a           ; 4*digit
+                sta pl_hpos
+                lsr a           ; 2*digit
+                lsr a           ; digit
+                adc pl_hpos     ; 5*digit
+                adc #0          ; +0 - left hand digit set
+                sta p0_left_digit_ptr,y
+                dex
+                beq prepare_scores_loop
+                ldx #1          ; X=user index
+
+prepare_players_loop:
+                txa             ; A=user index
+                asl a           ; A=2*player index
+                tay             ; Y=2*player index
+                lda #$FE        ; MSB of sprite row selector table
+                sta p0_sprite_row_selector_ptr+1,y; set ptr MSB
+                lda #$52                          ; $fe52 is the right table address for the sprite at the bottom of the screen
+                sec
+                sbc pl_ys,x
+                sta p0_sprite_row_selector_ptr,y; set ptr LSB
+                lda #$52
+                sbc mi_ys,x     ; as above, but for missile enable
+                sta enam0_data_ptr,y
+                lda byte_DB,x
+                sbc pl_ys,x
+                sbc pl_ys,x
+                sta grp0_data_ptr,y
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #8          ; mask out reflect bit
+                sta rINPT3_wREFP0,x; reflect the player sprite as required
+                dex
+                beq prepare_players_loop
+                lda COLUP0      ; colour-lum player 0
+                bpl loc_F81A
+                ldx byte_E5
+                inc unk_E6,x
+
+loc_F81A:
+                lda byte_B3
+                and #1
+                tax
+                ldy pl_tongue_counters,x
+                bne loc_F826
+                eor #1
+                tax
+
+loc_F826:
+                asl a
+                tay
+                stx byte_E5
+                lda p0_sprite_row_selector_ptr,y
+                ldy pl_tongue_counters,x
+                beq loc_F850
+                clc
+                adc #2
+                sta enabl_data_ptr
+                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                and #8
+                bne loc_F844
+                lda pl_xs,x
+                clc
+                adc unk_F796-1,y
+                bcc loc_F84B
+
+loc_F844:
+                lda pl_xs,x
+                sec
+                sbc unk_F796-1,y
+                sec
+
+loc_F84B:
+                adc #1
+                jmp loc_F856
+
+;-------------------------------------------------------------------------
+
+loc_F850:
+                lda #$52
+                sta enabl_data_ptr
+                lda #0
+
+loc_F856:
+                pha
+                lda byte_B7
+                asl a
+                asl a
+                tay
+                lda unk_E6,x
+                lsr a
+                ldx #3
+                bcs loc_F87C
+                lda #0
+                sta pf_eor_value; value EORd with playfield data
+
+loc_F867:
+                dey
+                lda unk_F7A2,y
+                sta byte_98,x
+                lda unk_F79E,x
+                sta byte_9C,x
+                dex
+                bpl loc_F867
+                lda byte_98
+                sta byte_87
+                jmp loc_F892
+
+;-------------------------------------------------------------------------
+
+loc_F87C:
+                lda #$FF
+                sta pf_eor_value; value EORd with playfield data
+
+loc_F880:
+                dey
+                lda unk_F7A2,y
+                sta byte_9C,x
+                lda unk_F79E,x
+                sta byte_98,x
+                dex
+                bpl loc_F880
+                lda byte_9C
+                sta byte_87
+
+loc_F892:
+                pla
+                ldx #4
+                bpl loc_F899
+
+loc_F897:
+                lda pl_xs,x
+
+loc_F899:
+                jsr prepare_object_hpos; prepare hpos for object
+                                       ; entry: X=object index
+                                       ;        A=position
+                                       ; exit: _hpos set up
+                dex
+                bpl loc_F897
+                ldx #$FE
+                ldy #$20        ; 1-clock wide missile
+                                ; one player/missile copy
+                lda byte_B3
+                and #2
+                beq loc_F8C4
+                dec enam0_data_ptr
+                dec enam1_data_ptr
+                ldx #3
+
+loc_F8AF:
+                lda pl_dxs,x
+                bmi loc_F8BB    ; taken if object not visible
+                lda pl_xs,x
+                clc
+                adc #2
+                jsr prepare_object_hpos; prepare hpos for object
+                                       ; entry: X=object index
+                                       ;        A=position
+                                       ; exit: _hpos set up
+
+loc_F8BB:
+                dex             ; next object
+                cpx #2
+                beq loc_F8AF    ; loop just for m1/m0
+                ldx #$FF
+                ldy #$10        ; 2-clock wide missile
+                                ; one player/missile copy
+
+loc_F8C4:
+                stx enam0_data_ptr+1
+                stx enam1_data_ptr+1
+                sty rCXP0FB_wNUSIZ0; R: D7 = collision M0/PF; D6 = collision M0/BL
+                                   ; W: number-size player-missile 0
+                sty rCXM1FB_wNUSIZ1; R: D7 = collision M1/PF; D6 = collision M1/BL
+                                   ; W: number-size player-missile 1
+                lda byte_B3
+                lsr a
+                bcs loc_F8E1
+                ldx m0_hpos
+                ldy m1_hpos
+                stx m1_hpos
+                sty m0_hpos
+                ldx enam0_data_ptr
+                ldy enam1_data_ptr
+                stx enam1_data_ptr
+                sty enam0_data_ptr
+
+loc_F8E1:
+                jmp apply_object_hmotions
+; End of function prepare_display
+
+;-------------------------------------------------------------------------
+
+p0_colours:     .byte 4
+                .byte 6
+                .byte 6
+                .byte 2
+                .byte 2
+                .byte 4
+p1_colours:     .byte $32; 2
+                .byte $32       ; 2
+                .byte $34       ; 4
+                .byte $30       ; 0
+                .byte $32       ; 2
+                .byte $34       ; 4
+
+;-------------------------------------------------------------------------
+
+sub_F8F0:
+                lda byte_B3
+                and #$3F
+                bne locret_F913
+                dec byte_B8
+                bne locret_F913
+                lda #26
+                sta byte_B8
+                dec byte_B7
+                beq loc_F90F
+                ldx byte_B7
+                lda p0_colours-1,x
+                sta pl_colours
+                lda p1_colours-1,x
+                sta pl_colours+1
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F90F:
+                inc byte_B7
+                inc byte_B4
+
+locret_F913:
+                rts
+; End of function sub_F8F0
+
+;-------------------------------------------------------------------------
+
+sub_F914:
+
+                lda ch_sounds,x
+                bne loc_F931
+; End of function sub_F914
+
+;-------------------------------------------------------------------------
+
+; Y = sound
+; X = channel
+
+start_sound:
+                sty ch_sounds,x
+                lda audio_counter_by_sound-1,y
+                sta ch_audio_counters,x
+                lda audf_by_sound-1,y; AUDF setting for sound
+                sta AUDF0,x
+                lda audc_and_audv_by_sound-1,y; AUDV/AUDC settings for each sound
+                                              ;  7    4 3    0
+                                              ; +------+------+
+                                              ; | AUDC | AUDV |
+                                              ; +------+------+
+                sta AUDV0,x
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                sta AUDC0,x
+                clc
+                rts
+; End of function start_sound
+
+;-------------------------------------------------------------------------
+
+loc_F931:
+                sec
+                rts
+
+;-------------------------------------------------------------------------
+
+update_sounds:
+                ldx #1
+                jsr update_sound_channel; X=channel number, 0 or 1
+                dex
+; End of function update_sounds
+
+;-------------------------------------------------------------------------
+
+; X=channel number, 0 or 1
+
+update_sound_channel:
+                ldy ch_sounds,x
+                beq locret_F956 ; taken if no sound
+                dec ch_audio_counters,x
+                beq disable_audio_channel; taken if sound finished
+                lda sound_routine_lsbs-1,y; table of LSBs
+                sta sound_routine_temp
+                lda sound_routine_msbs-1,y; table of MSBs
+                sta sound_routine_temp+1
+                lda ch_audio_counters,x
+                jmp (sound_routine_temp)
+
+;-------------------------------------------------------------------------
+
+disable_audio_channel:
+                lda #0
+                sta ch_sounds,x
+                sta AUDV0,x
+
+locret_F956:
+                rts
+; End of function update_sound_channel
+
+;-------------------------------------------------------------------------
+
+sound1:
+                and #1
+                beq loc_F960
+                lda #0
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F960:
+                lda ch_audio_counters,x
+                lsr a
+                lsr a
+                adc #3
+                sta AUDF0,x
+                lda #$C
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound2:
+                cmp #2
+                bcc loc_F981
+                lsr a
+                clc
+                adc #2
+                sta AUDF0,x
+                lsr a
+                lsr a
+                eor #7
+                sec
+                sbc #2
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F981:
+                lda #31
+                sta AUDF0,x
+                lda #8
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound3:
+                cmp #56
+                bcc loc_F999
+                asl a
+                asl a
+                eor #$FF
+                adc #$EF
+                sta AUDV0,x
+                jmp loc_F9A1
+
+;-------------------------------------------------------------------------
+
+loc_F999:
+                cmp #40
+                bcc loc_F9A9
+                sbc #40
+                sta AUDV0,x
+
+loc_F9A1:
+                lda #60
+                sec
+                sbc ch_audio_counters,x
+                sta AUDF0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F9A9:
+                cmp #$14
+                bcc loc_F9BD
+                lsr a
+                lsr a
+                eor #$FF
+                adc #$A
+                sta AUDV0,x
+                lda ch_audio_counters,x
+                sec
+                sbc #$12
+                sta AUDF0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F9BD:
+                lsr a
+                lsr a
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound4:
+                lsr a
+                eor #$FF
+                bcs loc_F9C9
+                adc #4
+
+loc_F9C9:
+                adc #18
+                clc
+                adc unk_EC,x
+                sta AUDF0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound5:
+                cmp #$10
+                bcs locret_F9E7
+                cmp #4
+                bcc loc_F9DE
+                adc #3
+                jmp loc_F9E2
+
+;-------------------------------------------------------------------------
+
+loc_F9DE:
+                eor #$FF
+                adc #$C
+
+loc_F9E2:
+                clc
+                adc unk_EC,x
+                sta AUDF0,x
+
+locret_F9E7:
+                rts
+
+;-------------------------------------------------------------------------
+
+sound6:
+                cmp #1
+                beq loc_FA0E
+                cmp #80
+                bcc loc_F9F2
+                sbc #80
+
+loc_F9F2:
+                cmp #50
+                bcs loc_F9FC
+                sta sound_routine_temp
+                and #1
+                beq loc_FA01
+
+loc_F9FC:
+                lda #0
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_FA01:
+                lda sound_routine_temp
+                lsr a
+                lsr a
+                adc #2
+                sta AUDF0,x
+                lda #$C
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_FA0E:
+                ldy #7
+                ldx #1
+                jsr start_sound ; Y = sound
+                                ; X = channel
+                dex
+                jsr start_sound ; Y = sound
+                                ; X = channel
+                inx
+                rts
+
+;-------------------------------------------------------------------------
+
+sound7:
+                cmp #1
+                bne loc_FA2C
+                jsr rnd
+                eor byte_B3
+                and #$F
+                adc #130
+                sta ch_audio_counters
+                sta ch_audio_counters+1
+
+loc_FA2C:
+                cmp #32
+                bcs loc_FA42
+                cmp #$10
+                bcc loc_FA36
+                eor #$1F
+
+loc_FA36:
+                lsr a
+                php
+                lsr a
+                sta AUDV0,x
+                plp
+                txa
+                adc #10
+                sta AUDF0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_FA42:
+                lda #0
+
+loc_FA44:
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound_routine_lsbs:.byte $57,$6D,$8A,$C2,$D1,$E8,$1B
+                ; table of LSBs
+sound_routine_msbs:.byte $F9,$F9,$F9,$F9,$F9,$F9,$FA
+                ; table of MSBs
+audc_and_audv_by_sound:.byte $60; `
+                ; AUDV/AUDC settings for each sound
+                ;  7    4 3    0
+                ; +------+------+
+                ; | AUDC | AUDV |
+                ; +------+------+
+                .byte $81       ;
+                .byte $80       ;
+                .byte $43       ; C
+                .byte $43       ; C
+                .byte $60       ; `
+                .byte $40       ; @
+audf_by_sound:  .byte 0
+                ; AUDF setting for sound
+                .byte $A
+                .byte 0
+                .byte $1A
+                .byte $14
+                .byte 0
+                .byte $A
+audio_counter_by_sound:.byte 23
+                .byte 20
+                .byte 60
+                .byte 18
+                .byte 18
+                .byte 130
+                .byte 80
+
+;-------------------------------------------------------------------------
+
+sub_FA6A:
+                tya
+                pha
+                ldy #1
+                jsr start_sound ; Y = sound
+                                ; X = channel
+                pla
+                tay
+                rts
+; End of function sub_FA6A
+
+;-------------------------------------------------------------------------
+
+play_tongue_sound:
+                tya
+                pha
+                ldy #2
+                jsr start_sound ; Y = sound
+                                ; X = channel
+                pla
+                tay
+                rts
+; End of function play_tongue_sound
+
+;-------------------------------------------------------------------------
+
+sub_FA7E:
+                lda byte_B3
+                and #1
+                tax
+                jsr rnd
+                eor byte_B3
+                and #$F9
+                bne locret_FAA6
+                jsr rnd
+                lsr a
+                and #3
+                sta unk_EC,x
+                ldy #4
+                bcs loc_FA99
+                iny
+
+loc_FA99:
+                jsr sub_F914
+                bcs locret_FAA6
+                lda audf_by_sound-1,y; AUDF setting for sound
+                clc
+                adc unk_EC,x
+                sta AUDF0,x
+
+locret_FAA6:
+                rts
+; End of function sub_FA7E
+
+;-------------------------------------------------------------------------
+
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+left_digits_pf_data:.byte $70; p
+                .byte $50       ; P
+                .byte $50       ; P
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $70       ; p
+                .byte $40       ; @
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $10
+                .byte $10
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $40       ; @
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $40       ; @
+                .byte $70       ; p
+                .byte $10
+                .byte $10
+                .byte $10
+                .byte $10
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $70       ; p
+right_digits_pf_data:.byte 7
+                .byte 5
+                .byte 5
+                .byte 5
+                .byte 7
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 7
+                .byte 4
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 1
+                .byte 1
+                .byte 7
+                .byte 5
+                .byte 5
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 4
+                .byte 7
+                .byte 7
+                .byte 5
+                .byte 7
+                .byte 4
+                .byte 7
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 7
+                .byte 7
+                .byte 5
+                .byte 7
+                .byte 5
+                .byte 7
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 5
+                .byte 7
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $18
+                .byte $34       ; 4
+                .byte $2C       ; ,
+                .byte $76       ; v
+                .byte $4C       ; L
+                .byte $4A       ; J
+                .byte $C9       ;
+                .byte $84       ;
+                .byte 0
+                .byte $20
+                .byte 4
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $18
+                .byte $24       ; $
+                .byte $18
+                .byte 0
+                .byte 0
+                .byte 4
+                .byte $4A       ; J
+                .byte 2
+                .byte $20
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $3C       ; <
+                .byte $42       ; B
+                .byte $42       ; B
+                .byte $42       ; B
+                .byte $3C       ; <
+                .byte 0
+                .byte 0
+                .byte $40       ; @
+                .byte $82       ;
+                .byte $10
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $3C       ; <
+                .byte $42       ; B
+                .byte $42       ; B
+                .byte $81       ;
+                .byte $42       ; B
+                .byte $42       ; B
+                .byte $3C       ; <
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $3D       ; =
+                .byte $21       ; !
+                .byte $21       ; !
+                .byte $39       ; 9
+                .byte $21       ; !
+                .byte $20
+                .byte $3C       ; <
+                .byte 0
+                .byte 0
+                .byte $11
+                .byte $11
+                .byte $11
+                .byte $11
+                .byte $11
+                .byte $11
+                .byte $7D       ; }
+                .byte 0
+                .byte 0
+                .byte $5C       ; \
+                .byte $54       ; T
+                .byte $54       ; T
+                .byte $54       ; T
+                .byte $9C       ;
+                .byte 4
+                .byte 4
+                .byte 0
+                .byte 0
+                .byte $4C       ; L
+                .byte $50       ; P
+                .byte $5C       ; \
+                .byte $54       ; T
+                .byte $C8       ;
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $7D       ; }
+                .byte $7B       ; {
+                .byte $FE       ;
+                .byte $FE       ;
+                .byte $FC       ;
+                .byte $7F       ;
+                .byte $7F       ;
+                .byte $3B       ; ;
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $C
+                .byte $38       ; 8
+                .byte $70       ; p
+                .byte $3C       ; <
+                .byte $7B       ; {
+                .byte $7E       ; ~
+                .byte $3E       ; >
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $1B
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 8
+                .byte $10
+                .byte $70       ; p
+                .byte $1C
+                .byte $78       ; x
+                .byte $62       ; b
+                .byte $7C       ; |
+                .byte $78       ; x
+                .byte $3E       ; >
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $1B
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $20
+                .byte $20
+                .byte $30       ; 0
+                .byte 8
+                .byte $18
+                .byte $70       ; p
+                .byte $66       ; f
+                .byte $7C       ; |
+                .byte $78       ; x
+                .byte $3E       ; >
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $1B
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+                .byte $40       ; @
+                .byte $40       ; @
+                .byte $60       ; `
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $60       ; `
+                .byte $66       ; f
+                .byte $7C       ; |
+                .byte $78       ; x
+                .byte $3E       ; >
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $1B
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+pf0_data:       .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $10
+                .byte $30       ; 0
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $B0       ;
+                .byte $70       ; p
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $70       ; p
+                .byte $B0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $70       ; p
+                .byte $D0       ;
+                .byte $90       ;
+                .byte $90       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $10
+                .byte $10
+                .byte $30       ; 0
+                .byte $30       ; 0
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $E0       ;
+                .byte $F0       ;
+                .byte $B0       ;
+                .byte $30       ; 0
+                .byte $F0       ;
+                .byte $70       ; p
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $E0       ;
+                .byte $B0       ;
+                .byte $70       ; p
+                .byte $D0       ;
+                .byte $F0       ;
+                .byte $70       ; p
+                .byte $E0       ;
+                .byte $C0       ;
+                .byte 0
+                .byte $80       ;
+                .byte 0
+pf1_data:       .byte 1
+                .byte 3
+                .byte 3
+                .byte 7
+                .byte $F
+                .byte $F
+                .byte $1E
+                .byte $1F
+                .byte $3F       ; ?
+                .byte $3B       ; ;
+                .byte $7D       ; }
+                .byte $7E       ; ~
+                .byte $E7       ;
+                .byte $78       ; x
+                .byte $37       ; 7
+                .byte $3F       ; ?
+                .byte $1E
+                .byte $1D
+                .byte $F
+                .byte $F
+                .byte 7
+                .byte 5
+                .byte 0
+                .byte 0
+                .byte $A0       ;
+                .byte $E0       ;
+                .byte $E0       ;
+                .byte $F0       ;
+                .byte $F0       ;
+                .byte $B0       ;
+                .byte $F8       ;
+                .byte $F9       ;
+                .byte $FF
+                .byte $FF
+                .byte $E7       ;
+                .byte $FF
+                .byte $7E       ; ~
+                .byte $FE       ;
+                .byte $DC       ;
+                .byte $A8       ;
+                .byte $FC       ;
+                .byte $7C       ; |
+                .byte $B4       ;
+                .byte $EC       ;
+                .byte $B8       ;
+                .byte $B8       ;
+                .byte $A8       ;
+                .byte $88       ;
+                .byte $20
+                .byte $A8       ;
+                .byte $A8       ;
+                .byte $A8       ;
+                .byte $A8       ;
+                .byte $A8       ;
+                .byte $88       ;
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $18
+                .byte $30       ; 0
+                .byte $60       ; `
+                .byte $E0       ;
+                .byte $C3       ;
+                .byte $C6       ;
+                .byte $8F       ;
+                .byte $DD       ;
+                .byte $FF
+                .byte $FF
+                .byte $56       ; V
+                .byte $FD       ;
+                .byte $FF
+                .byte $FF
+                .byte $FE       ;
+                .byte $DF       ;
+                .byte $7D       ; }
+                .byte $EF       ;
+                .byte $F6       ;
+                .byte $5B       ; [
+                .byte $BF       ;
+                .byte $FA       ;
+                .byte $EC       ;
+                .byte 0
+pf2_data:       .byte $21; !
+                .byte $63       ; c
+                .byte $77       ; w
+                .byte $7F       ;
+                .byte $7F       ;
+                .byte $7F       ;
+                .byte $3F       ; ?
+                .byte $BE       ;
+                .byte $FD       ;
+                .byte $7B       ; {
+                .byte $37       ; 7
+                .byte $29       ; )
+                .byte $76       ; v
+                .byte $7B       ; {
+                .byte $7D       ; }
+                .byte $7E       ; ~
+                .byte $3F       ; ?
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $F
+                .byte 7
+                .byte 3
+                .byte 1
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 4
+                .byte $5E       ; ^
+                .byte $FF
+                .byte $FF
+                .byte $FE       ;
+                .byte $FE       ;
+                .byte $EE       ;
+                .byte $F6       ;
+                .byte $FE       ;
+                .byte $BC       ;
+                .byte $FC       ;
+                .byte $E8       ;
+                .byte $E8       ;
+                .byte $60       ; `
+                .byte $60       ; `
+                .byte $20
+                .byte $20
+                .byte 0
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 1
+                .byte 0
+                .byte 1
+                .byte 3
+                .byte 1
+                .byte 2
+                .byte 3
+                .byte 1
+                .byte 1
+                .byte 0
+                .byte 1
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+sprite_row_selector_table:.byte 0; big table that has 8 entries in the middle with bit 7 set.
+                ; used to decide which scanlines have sprite data in them.
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $80       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte $82       ;
+                .byte $83       ;
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+unk_FEB5:       .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 3
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $80       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte $80       ;
+                .byte $82       ;
+                .byte $82       ;
+                .byte $83       ;
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .byte $FF
+                .word main
+                .word main
+                .word main
+; end of 'ROM'
+
+                .end
