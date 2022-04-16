@@ -20,9 +20,12 @@ build:
 	$(SHELLCMD) mkdir "$(BUILD)"
 
 	$(TASS) fnf-2600.s65 --nostart "--list=$(BUILD)/fnf-2600.lst" "--output=$(BUILD)/fnf-2600.bin"
-	@$(SHELLCMD) sha1 "$(BUILD)/fnf-2600.bin"
 	@$(SHELLCMD) sha1 "Frogs and Flies (USA).a26"
-
+	@$(SHELLCMD) sha1 "$(BUILD)/fnf-2600.bin"
 
 ##########################################################################
 ##########################################################################
+
+.PHONY:diff
+diff:
+	vbindiff "$(BUILD)/fnf-2600.bin" "Frogs and Flies (USA).a26"

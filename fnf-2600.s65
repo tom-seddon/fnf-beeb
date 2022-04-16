@@ -947,9 +947,13 @@ byte_F25F:      .char -55, -37, -19, -1
                 .byte $4B       ; K
                 .byte $4B       ; K
                 .byte $4B       ; K
-; f2a7 f444 f479 f4b6 f4c4 f4f3 f365 f40f f39a f39b f3c6 f3eb f3fe
-pl_state_routine_lsbs:.byte $A7,$44,$79,$B6,$C4,$F3,$65,$F,$9A,$9B,$C6,$ED,$FE
-pl_state_routine_msbs:.byte $F2,$F4,$F4,$F4,$F4,$F4,$F3,$F4,$F3,$F3,$F3,$F3,$F3
+
+;-------------------------------------------------------------------------
+
+pl_state_routines=[pn_state0,pn_state1,pn_state2,pn_state3,pn_state4,pn_state5,pn_state6,pn_state7,pn_state8,pn_state9,pn_state10,pn_state11,pn_state12]
+
+pl_state_routine_lsbs:.byte <pl_state_routines
+pl_state_routine_msbs:.byte >pl_state_routines
 
 ;-------------------------------------------------------------------------
 
@@ -1194,13 +1198,13 @@ pn_state10:     .block
                 sta byte_DB
                 lda #165
 
-pn_state11:
                 sta byte_DC
                 rts
                 .endblock
 
 ;-------------------------------------------------------------------------
 
+pn_state11:
                 lda pl_xs
                 cmp #72
                 bcs locret_F3C5
@@ -2046,11 +2050,11 @@ prepare_players_loop:
                 tay             ; Y=2*player index
                 lda #$FE        ; MSB of sprite row selector table
                 sta p0_sprite_row_selector_ptr+1,y; set ptr MSB
-                lda #$52                          ; $fe52 is the right table address for the sprite at the bottom of the screen
+                lda #bottom_of_sprite-sprite_row_selector_table ; $fe52 is the right table address for the sprite at the bottom of the screen
                 sec
                 sbc pl_ys,x
                 sta p0_sprite_row_selector_ptr,y; set ptr LSB
-                lda #$52
+                lda #bottom_of_sprite-sprite_row_selector_table
                 sbc mi_ys,x     ; as above, but for missile enable
                 sta enam0_data_ptr,y
                 lda byte_DB,x
@@ -2563,24 +2567,26 @@ loc_FA44:
 
 ;-------------------------------------------------------------------------
 
-sound_routine_lsbs:.byte $57,$6D,$8A,$C2,$D1,$E8,$1B
-                ; table of LSBs
-sound_routine_msbs:.byte $F9,$F9,$F9,$F9,$F9,$F9,$FA
-                ; table of MSBs
-audc_and_audv_by_sound:.byte $60; `
-                ; AUDV/AUDC settings for each sound
-                ;  7    4 3    0
-                ; +------+------+
-                ; | AUDC | AUDV |
-                ; +------+------+
+sound_routines=[sound1,sound2,sound3,sound4,sound5,sound6,sound7]
+                
+sound_routine_lsbs:.byte <sound_routines
+sound_routine_msbs:.byte >sound_routines
+                
+; AUDV/AUDC settings for each sound
+;  7    4 3    0
+; +------+------+
+; | AUDC | AUDV |
+; +------+------+
+audc_and_audv_by_sound:.byte $60;
                 .byte $81       ;
                 .byte $80       ;
                 .byte $43       ; C
                 .byte $43       ; C
                 .byte $60       ; `
                 .byte $40       ; @
-audf_by_sound:  .byte 0
+                
                 ; AUDF setting for sound
+audf_by_sound:  .byte 0
                 .byte $A
                 .byte 0
                 .byte $1A
@@ -3593,6 +3599,7 @@ sprite_row_selector_table:.byte 0; big table that has 8 entries in the middle wi
                 .byte $80       ;
                 .byte $82       ;
                 .byte $83       ;
+bottom_of_sprite:
                 .byte 0
                 .byte 0
                 .byte 0
