@@ -29,3 +29,8 @@ build:
 .PHONY:diff
 diff:
 	vbindiff "$(BUILD)/fnf-2600.bin" "Frogs and Flies (USA).a26"
+
+.PHONY:bgtest
+bgtest:
+	$(PYTHON3) ./tools/pf_convert.py
+	$(PYTHON3) ./submodules/beeb/bin/png2bbc.py build/bg.png 2 -o $(BEEB_DEST)/P.BG --160

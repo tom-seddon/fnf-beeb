@@ -1,0 +1,7 @@
+$.BGTEST diff=bbcbasic
+$.DITHER diff=bbcbasic
+$.DITHER2 diff=bbcbasic
+$.DITHER3 diff=bbcbasic
+$.DITHER4 diff=bbcbasic
+B.BGRORDER diff=bbcbasic
+$.TIAPAL diff=bbcbasic
