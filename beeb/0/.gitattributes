@@ -5,3 +5,4 @@ $.DITHER3 diff=bbcbasic
 $.DITHER4 diff=bbcbasic
 B.BGRORDER diff=bbcbasic
 $.TIAPAL diff=bbcbasic
+$.DITHER5 diff=bbcbasic

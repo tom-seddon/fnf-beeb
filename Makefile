@@ -37,3 +37,7 @@ diff:
 bgtest:
 	$(PYTHON3) ./tools/pf_convert.py
 	$(PYTHON3) ./submodules/beeb/bin/png2bbc.py build/bg.png 2 -o $(BEEB_DEST)/P.BG --160
+
+.PHONY:tiapal
+tiapal: _folders
+	$(PYTHON3) ./tools/make_tia_palette_pngs.py $(BUILD)

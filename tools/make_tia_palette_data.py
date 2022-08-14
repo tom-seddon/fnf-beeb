@@ -2,20 +2,24 @@
 import tia_palette,argparse,sys
 
 def main2(options):
-    data=bytearray(128*3)
+    data=[]
     j=0
     for i in range(0,256,2):
         rgb=tia_palette.get_rgb(i)
-        data[j+0]=rgb[0]
-        data[j+1]=rgb[1]
-        data[j+2]=rgb[2]
-        j+=3
+        if options.nula:
+            data.append((rgb[0]&0xf0)>>4)
+            data.append(rgb[1]&0xf0|(rgb[2]&0xf0)>>4)
+        else:
+            data.append(rgb[0])
+            data.append(rgb[1])
+            data.append(rgb[2])
 
-    with open(options.output_path,'wb') as f: f.write(data)
+    with open(options.output_path,'wb') as f: f.write(bytearray(data))
     
 def main(argv):
     p=argparse.ArgumentParser()
 
+    p.add_argument('-n','--nula',action='store_true',help='''write NuLA-friendly data''')
     p.add_argument('output_path',metavar='FILE',help='''write output to %(metavar)s''')
 
     main2(p.parse_args(argv))
