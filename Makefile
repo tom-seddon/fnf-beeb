@@ -15,13 +15,16 @@ BUILD:=$(abspath ./build)
 ##########################################################################
 
 .PHONY:build
-build:
-	$(SHELLCMD) mkdir "$(BEEB_DEST)"
-	$(SHELLCMD) mkdir "$(BUILD)"
-
+build: _folders
 	$(TASS) fnf-2600.s65 --nostart "--list=$(BUILD)/fnf-2600.lst" "--output=$(BUILD)/fnf-2600.bin"
 	@$(SHELLCMD) sha1 "Frogs and Flies (USA).a26"
 	@$(SHELLCMD) sha1 "$(BUILD)/fnf-2600.bin"
+	@cmp -s "Frogs and Flies (USA).a26" "$(BUILD)/fnf-2600.bin"
+
+.PHONY:_folders
+_folders:
+	$(SHELLCMD) mkdir "$(BEEB_DEST)"
+	$(SHELLCMD) mkdir "$(BUILD)"
 
 ##########################################################################
 ##########################################################################
