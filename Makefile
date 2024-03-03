@@ -1,14 +1,27 @@
 # -*- mode:makefile-gmake; -*-
 
-TASS:=64tass
-PYTHON3:=python3
+ifeq ($(OS),Windows_NT)
+PYTHON:=py -3
+TASSCMD:=bin\64tass.exe
+else
+PYTHON:=/usr/bin/python3
+TASSCMD:=64tass
+endif
 
 ##########################################################################
 ##########################################################################
 
-TASSCMD:=$(TASS) --m65xx -C -Wall --line-numbers
-SHELLCMD:=$(PYTHON3) $(realpath submodules/shellcmd.py/shellcmd.py)
-BEEB_DEST:=$(abspath ./beeb/1)
+ifeq ($(VERBOSE),1)
+_V:=
+_TASSQ:=
+else
+_V:=@
+_TASSQ:=-q
+endif
+
+TASS:="$(TASSCMD)" --m65xx -C -Wall --line-numbers $(_TASSQ)
+SHELLCMD:=$(PYTHON) $(realpath submodules/shellcmd.py/shellcmd.py)
+BEEB_DEST:=$(abspath ./beeb/Z)
 BUILD:=$(abspath ./build)
 
 ##########################################################################
@@ -16,15 +29,13 @@ BUILD:=$(abspath ./build)
 
 .PHONY:build
 build: _folders
-	$(TASS) fnf-2600.s65 --nostart "--list=$(BUILD)/fnf-2600.lst" "--output=$(BUILD)/fnf-2600.bin"
-	@$(SHELLCMD) sha1 "Frogs and Flies (USA).a26"
-	@$(SHELLCMD) sha1 "$(BUILD)/fnf-2600.bin"
-	@cmp -s "Frogs and Flies (USA).a26" "$(BUILD)/fnf-2600.bin"
+	$(_V)$(TASS) fnf-2600.s65 --nostart "--list=$(BUILD)/fnf-2600.lst" "--output=$(BUILD)/fnf-2600.bin"
+	$(_V)$(SHELLCMD) sha1 "Frogs and Flies (USA).a26"
+	$(_V)$(SHELLCMD) sha1 "$(BUILD)/fnf-2600.bin"
 
 .PHONY:_folders
 _folders:
-	$(SHELLCMD) mkdir "$(BEEB_DEST)"
-	$(SHELLCMD) mkdir "$(BUILD)"
+	$(_V)$(SHELLCMD) mkdir "$(BEEB_DEST)" "$(BUILD)"
 
 ##########################################################################
 ##########################################################################
@@ -35,9 +46,13 @@ diff:
 
 .PHONY:bgtest
 bgtest:
-	$(PYTHON3) ./tools/pf_convert.py
-	$(PYTHON3) ./submodules/beeb/bin/png2bbc.py build/bg.png 2 -o $(BEEB_DEST)/P.BG --160
+	$(_V)$(PYTHON) ./tools/pf_convert.py
+	$(_V)$(PYTHON) ./submodules/beeb/bin/png2bbc.py build/bg.png 2 -o $(BEEB_DEST)/P.BG --160
 
 .PHONY:tiapal
 tiapal: _folders
-	$(PYTHON3) ./tools/make_tia_palette_pngs.py $(BUILD)
+	$(_V)$(PYTHON) ./tools/make_tia_palette_pngs.py $(BUILD)
+
+.PHONY:clean
+clean:
+	$(_V)$(SHELLCMD) rm-tree "$(BUILD)"
