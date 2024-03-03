@@ -242,8 +242,16 @@ unk_BF:         .fill 1
                 .fill 1
 unk_C1:         .fill 1
                 .fill 1
-pl_flags:       .fill 2
+
                 ; b7 = player difficulty (0=pro 1=amateur)
+                ; b1 = tongue flag (0=in 1=out)
+pl_flags:       .block
+                .fill 2
+amateur=$80
+is_moving=$08
+tongue_out=$02
+                .endblock                
+                
 pl_states:      .fill 2
 pl_tongue_counters:.fill 2
 unk_C9:         .fill 1
@@ -978,10 +986,10 @@ pn_state0:
                 jsr sub_F71F
                 ldy p0_joystick_direction,x
                 bmi loc_F304    ; taken if invalid direction
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 bmi loc_F2EF    ; taken if amateur difficulty
-                and #8
-                beq loc_F2C8
+                and #pl_flags.is_moving
+                beq loc_F2C8    ;taken if not moving
                 cpy #JoystickDirection_Up
                 beq loc_F2C7    ; taken if direction is Up
                 cpy #JoystickDirection_Down
@@ -1003,16 +1011,16 @@ loc_F2C8:
                 lda pl_state0_dys,y
                 sta pl_dys,x
                 inc pl_ys,x
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
-                and #$F7
+                lda pl_flags,x
+                and #~pl_flags.is_moving
                 cpy #JoystickDirection_Down
                 bcs loc_F2EC    ; taken if Down, RightDown
                 cpy #JoystickDirection_LeftUp
                 bcc loc_F2EC    ; taken if Right, RightUp, Up
-                ora #8
+                ora #pl_flags.is_moving
 
 loc_F2EC:
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
 
 locret_F2EE:
                 rts
@@ -1020,9 +1028,9 @@ locret_F2EE:
 ;-------------------------------------------------------------------------
 
 loc_F2EF:
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 ldy #10
-                and #8
+                and #pl_flags.is_moving
                 beq loc_F2F9
                 ldy #-10
 
@@ -1037,7 +1045,7 @@ loc_F2F9:
 ;-------------------------------------------------------------------------
 
 loc_F304:
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 and #$40
                 beq locret_F2EE
                 lda byte_B3
@@ -1053,9 +1061,9 @@ loc_F304:
                 bpl loc_F2EF
 
 loc_F320:
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 ora #2
-                and #$F7
+                and #~pl_flags.is_moving
                 ldy #20
                 dex
                 beq loc_F32F
@@ -1063,7 +1071,7 @@ loc_F320:
                 ldy #236
 
 loc_F32F:
-                sta pl_flags+1,x; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags+1,x
                 sty pl_dxs+1,x
                 lda pl_xs+1,x
                 inx
@@ -1160,9 +1168,9 @@ pn_state9:
                 lda #$FF
                 sta COLUP0      ; colour-lum player 0
                 sta COLUP1      ; colour-lum player 1
-                lda pl_flags    ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags  
                 and #$F7
-                sta pl_flags    ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags  
                 lda #155
                 sta mi_xs
                 lda #56
@@ -1246,9 +1254,9 @@ pn_state7:
                 sta pl_ys,x
                 lda #0
                 sta pl_states,x
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 eor #8
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
                 ldy unk_F40B,x
                 and #8
                 beq loc_F435
@@ -1324,9 +1332,9 @@ pn_state2:
                 bcs locret_F4B5
                 lda #3
                 sta pl_states,x
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 ora #2
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
                 lda #-12
                 sta pl_dys,x
                 lda #0
@@ -1371,9 +1379,9 @@ loc_F4D6:
                 sta pl_ys,x
                 lda #$B7
                 sta byte_DB,x
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 eor #8
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
                 ldy #4
                 and #8
                 beq loc_F4F0
@@ -1410,9 +1418,9 @@ loc_F507:
                 sta pl_ys,x
                 lda #0
                 sta pl_dxs,x
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 and #$FD
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
                 rts
 
 ;-------------------------------------------------------------------------
@@ -1497,7 +1505,7 @@ update_tongues: .block
 ;-------------------------------------------------------------------------
 
 loc_F568:
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 and #$C0
                 beq loc_F59B
                 ldy #1
@@ -1515,7 +1523,7 @@ loc_F570:
                 cmp #6
                 bcc loc_F598
                 pha
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 lsr a
                 lsr a
                 lsr a
@@ -1542,8 +1550,8 @@ loc_F59B:
                 bpl locret_F5B3       ; taken if previously pressed
 
 activate_tongue:
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
-                and #2
+                lda pl_flags,x
+                and #pl_flags.tongue_out
                 bne locret_F5B3 ; taken if tongue already out?
                 lda #8
                 sta pl_tongue_counters,x
@@ -1628,8 +1636,8 @@ sub_F5FD:       .block
                 lsr a
                 and #1
                 tax
-                lda pl_flags    ; b7 = player difficulty (0=pro 1=amateur)
-                ora pl_flags+1  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags  
+                ora pl_flags+1
                 asl a
                 lda #0
                 rol a
@@ -1821,11 +1829,11 @@ initialise_player_difficulty:.block
 
 loc_F6FD:
                 inx             ; restore X
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 bpl loc_F70B
                 bcc locret_F708 ; taken if amateur difficulty
                 and #$7F        ; mask off the pro bit
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
 
 locret_F708:
                 rts
@@ -1847,7 +1855,7 @@ loc_F70B:
 
 loc_F716:
                 inx
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
                 lda initial_p_xs,x
                 sta pl_xs,x
                 rts
@@ -1864,7 +1872,7 @@ sub_F71F:       .block
                 tax
                 dec unk_BD,x
                 bne locret_F747
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 and #$40
                 bne locret_F747
                 ora #$40
@@ -1875,7 +1883,7 @@ sub_F71F:       .block
 
 loc_F73B:
                 inx
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
                 lda initialise_player_difficulty.initial_p_xs,x
                 sta pl_xs,x
                 lda #2
@@ -1887,7 +1895,8 @@ locret_F747:
 
 ;-------------------------------------------------------------------------
 
-joystick_direction_by_inputs:.byte JoystickDirection_Invalid
+joystick_direction_by_inputs:
+                .byte JoystickDirection_Invalid
                 .byte JoystickDirection_Invalid
                 .byte JoystickDirection_Invalid
                 .byte JoystickDirection_Invalid
@@ -1941,9 +1950,9 @@ store_player_inputs:.block
 loc_F776:
                 lda #$F
                 sta unk_BD,x
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 and #$BF
-                sta pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                sta pl_flags,x
                 rts
                 .endblock
 
@@ -2061,7 +2070,7 @@ prepare_players_loop:
                 sbc pl_ys,x
                 sbc pl_ys,x
                 sta grp0_data_ptr,y
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 and #8          ; mask out reflect bit
                 sta rINPT3_wREFP0,x; reflect the player sprite as required
                 dex
@@ -2090,7 +2099,7 @@ loc_F826:
                 clc
                 adc #2
                 sta enabl_data_ptr
-                lda pl_flags,x  ; b7 = player difficulty (0=pro 1=amateur)
+                lda pl_flags,x
                 and #8
                 bne loc_F844
                 lda pl_xs,x
@@ -2577,7 +2586,8 @@ sound_routine_msbs:.byte >sound_routines
 ; +------+------+
 ; | AUDC | AUDV |
 ; +------+------+
-audc_and_audv_by_sound:.byte $60;
+audc_and_audv_by_sound:
+                .byte $60;
                 .byte $81       ;
                 .byte $80       ;
                 .byte $43       ; C
@@ -2586,14 +2596,16 @@ audc_and_audv_by_sound:.byte $60;
                 .byte $40       ; @
                 
                 ; AUDF setting for sound
-audf_by_sound:  .byte 0
+audf_by_sound:
+                .byte 0
                 .byte $A
                 .byte 0
                 .byte $1A
                 .byte $14
                 .byte 0
                 .byte $A
-audio_counter_by_sound:.byte 23
+audio_counter_by_sound:
+                .byte 23
                 .byte 20
                 .byte 60
                 .byte 18
