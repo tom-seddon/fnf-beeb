@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # print Frogs & Flies playfield data
 
-import sys
+import sys,os
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              '../submodules/beeb/bin'))
 import png

@@ -19,7 +19,7 @@ _V:=@
 _TASSQ:=-q
 endif
 
-TASS:="$(TASSCMD)" --m65xx -C -Wall --line-numbers $(_TASSQ)
+TASS:="$(TASSCMD)" --m65xx -C -Wall --line-numbers $(_TASSQ) --verbose-list
 SHELLCMD:=$(PYTHON) $(realpath submodules/shellcmd.py/shellcmd.py)
 BEEB_DEST:=$(abspath ./beeb/Z)
 BUILD:=$(abspath ./build)

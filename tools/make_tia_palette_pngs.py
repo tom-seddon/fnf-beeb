@@ -129,9 +129,9 @@ def main2(options):
                 # 0321 - checquerboard
                 
                 beeb_image.putpixel(x+dx+0,y+dy+0,beeb_rgbs[0])
-                beeb_image.putpixel(x+dx+1,y+dy+0,beeb_rgbs[1])
+                beeb_image.putpixel(x+dx+1,y+dy+0,beeb_rgbs[3])
                 beeb_image.putpixel(x+dx+0,y+dy+1,beeb_rgbs[2])
-                beeb_image.putpixel(x+dx+1,y+dy+1,beeb_rgbs[3])
+                beeb_image.putpixel(x+dx+1,y+dy+1,beeb_rgbs[1])
 
     pc_image.save(os.path.join(options.output_folder,'tia_palette_pc.png'))
     beeb_image.get_widened().save(os.path.join(options.output_folder,'tia_palette_beeb.png'))

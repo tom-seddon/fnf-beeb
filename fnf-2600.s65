@@ -240,22 +240,25 @@ unk_BD:         .fill 1
 unk_BE:         .fill 1
 unk_BF:         .fill 1
                 .fill 1
-unk_C1:         .fill 1
-                .fill 1
 
-                ; b7 = player difficulty (0=pro 1=amateur)
-                ; b1 = tongue flag (0=in 1=out)
+                ; Per-player counter, used for counting stuff
+pl_counters:         .fill 2
+
 pl_flags:       .block
                 .fill 2
-amateur=$80
-is_moving=$08
-tongue_out=$02
+amateur=$80                     ; 0=pro 1=amateur
+; bit 6 = AI control? tested by loc_F304... randomly sticks tongue out...
+is_moving=$08                   ; might actually be the reflection flag??
+tongue_out=$02                  ; 0=in 1=out
                 .endblock                
-                
+
+                ; Per-player state
 pl_states:      .fill 2
+
+                ; Per-player tongue counters
+                
 pl_tongue_counters:.fill 2
-unk_C9:         .fill 1
-                .fill 1
+unk_C9:         .fill 2
 pl_dxs:         .fill 2
 mi_visibles:    .fill 2
 pl_dys:         .fill 2
@@ -899,8 +902,8 @@ initial_values: .byte 1
                 .byte $FB       ;             ; p1_left_digit_ptr+1
                 .byte $FB       ;             ; p1_right_digit_ptr+1
                 .byte $FE       ;             ; enabl_data_ptr+1
-                .byte $FC       ;             ; grp0_data_ptr+1
-                .byte $FC       ;             ; grp1_data_ptr+1
+                .byte >grp_data ;             ; grp0_data_ptr+1
+                .byte >grp_data ;             ; grp1_data_ptr+1
                 .byte 7         ; p0_y
                 .byte 7         ; p1_y
                 .byte $20
@@ -931,30 +934,44 @@ pl_state1a_dxs: .char 8, 4, 4, -4, -8, -$C, $C, $C
 pl_state1a_dys: .byte 8, $C, $C, $C, 8, 4, 4, 4
 pl_state1b_dxs: .char 11, 5, 5, -5, -11, -15, 15, 15
 pl_state1b_dys: .byte 11, 15, 15, 15, 11, 5, 5, 5
-byte_F25B:      .char $A, $D, $12, -$80
-byte_F25F:      .char -55, -37, -19, -1
+byte_F25B:
+                .byte $A
+                .byte $D
+                .byte $12
+                .byte $80
+
+
+                ; offsets of sprite ends
+byte_F25F:
+                .byte <(grp_frog3_end-1)
+                .byte <(grp_frog2_end-1)
+                .byte <(grp_frog1_end-1)
+                .byte <(grp_frog0_end-1)
+
+splash_frame_lsbs:
                 .byte 0
                 .byte 0
-                .byte $81       ;
-                .byte $81       ;
-                .byte $81       ;
-                .byte $81       ;
-                .byte $6F       ; o
-                .byte $6F       ; o
-                .byte $6F       ; o
-                .byte $6F       ; o
-                .byte $5D       ; ]
-                .byte $5D       ; ]
-                .byte $5D       ; ]
-                .byte $5D       ; ]
+                .byte <(grp_splash0_end-1)
+                .byte <(grp_splash0_end-1)
+                .byte <(grp_splash0_end-1)
+                .byte <(grp_splash0_end-1)
+                .byte <(grp_splash1_end-1)
+                .byte <(grp_splash1_end-1)
+                .byte <(grp_splash1_end-1)
+                .byte <(grp_splash1_end-1)
+                .byte <(grp_splash2_end-1)
+                .byte <(grp_splash2_end-1)
+                .byte <(grp_splash2_end-1)
+                .byte <(grp_splash2_end-1)
                 .byte 0
                 .byte 0
                 .byte 0
                 .byte 0
-                .byte $4B       ; K
-                .byte $4B       ; K
-                .byte $4B       ; K
-                .byte $4B       ; K
+                .byte <(grp_splash3_end-1)
+                .byte <(grp_splash3_end-1)
+                .byte <(grp_splash3_end-1)
+                .byte <(grp_splash3_end-1)
+num_splash_frames=*-splash_frame_lsbs
 
 ;-------------------------------------------------------------------------
 
@@ -1004,7 +1021,7 @@ loc_F2C8:
                 lda #1
                 sta pl_states,x
                 lda #27
-                sta unk_C1,x
+                sta pl_counters,x
                 sty unk_C9,x
                 lda pl_state0_dxs,y
                 sta pl_dxs,x
@@ -1062,7 +1079,7 @@ loc_F304:
 
 loc_F320:
                 lda pl_flags,x
-                ora #2
+                ora #pl_flags.tongue_out
                 and #~pl_flags.is_moving
                 ldy #20
                 dex
@@ -1277,9 +1294,9 @@ loc_F435:
 pn_state1:
                 jsr sub_F51B
                 jsr clamp_player_x
-                dec unk_C1,x
+                dec pl_counters,x
                 beq loc_F474
-                lda unk_C1,x
+                lda pl_counters,x
                 ldy unk_C9,x
                 cmp #23
                 bne loc_F462
@@ -1352,17 +1369,19 @@ pn_state3:
                 lda pl_ys,x
                 bne locret_F4B5
                 sta pl_dys,x
-                lda #23
-                sta unk_C1,x
+
+                ; +1 to compensate for upcoming DEC
+                lda #num_splash_frames+1
+                sta pl_counters,x
                 lda #4
                 sta pl_states,x
 
 pn_state4:
-                dec unk_C1,x
-                beq loc_F4D6
-                ldy unk_C1,x
-                lda byte_F25F+3,y
-                beq loc_F4D3
+                dec pl_counters,x
+                beq loc_F4D6    ; taken if splash done
+                ldy pl_counters,x
+                lda splash_frame_lsbs-1,y;byte_F25F+3,y
+                beq loc_F4D3    ; taken if no sprite for this frame
                 sta byte_DB,x
                 lda #9
 
@@ -1951,7 +1970,7 @@ loc_F776:
                 lda #$F
                 sta unk_BD,x
                 lda pl_flags,x
-                and #$BF
+                and #~$40
                 sta pl_flags,x
                 rts
                 .endblock
@@ -1979,6 +1998,7 @@ rnd:            .block
 
 ;-------------------------------------------------------------------------
 
+; frog X velocity table?
 unk_F796:       .byte 4
                 .byte 6
                 .byte 8
@@ -1987,10 +2007,16 @@ unk_F796:       .byte 4
                 .byte 8
                 .byte 6
                 .byte 4
+
+;-------------------------------------------------------------------------
+
 unk_F79E:       .byte $C4
                 .byte $E4       ;
                 .byte $C6       ;
                 .byte $C6       ;
+
+;-------------------------------------------------------------------------
+
 unk_F7A2:       .byte 0
                 .byte 0
                 .byte 0
@@ -3016,6 +3042,9 @@ right_digits_pf_data:.byte 7
                 .byte $FF
                 .byte $FF
                 .byte $FF
+
+                .cerror (*&$ff)!=0,format("%04x",*)
+grp_data:
                 .byte $FF
                 .byte $FF
                 .byte $FF
@@ -3074,6 +3103,25 @@ right_digits_pf_data:.byte 7
                 .byte $FF
                 .byte 0
                 .byte 0
+
+; 075 ($fc4b) $00:         
+; 074 ($fc4a) $00:         
+; 073 ($fc49) $04:      X  
+; 072 ($fc48) $20:   X     
+; 071 ($fc47) $00:         
+; 070 ($fc46) $84: X    X  
+; 069 ($fc45) $c9: XX  X  X
+; 068 ($fc44) $4a:  X  X X 
+; 067 ($fc43) $4c:  X  XX  
+; 066 ($fc42) $76:  XXX XX 
+; 065 ($fc41) $2c:   X XX  
+; 064 ($fc40) $34:   XX X  
+; 063 ($fc3f) $18:    XX   
+; 062 ($fc3e) $00:         
+; 061 ($fc3d) $00:         
+; 060 ($fc3c) $00:         
+; 059 ($fc3b) $00:         
+; 058 ($fc3a) $00:         
                 .byte 0
                 .byte 0
                 .byte 0
@@ -3092,6 +3140,26 @@ right_digits_pf_data:.byte 7
                 .byte 4
                 .byte 0
                 .byte 0
+grp_splash3_end:
+
+; 093 ($fc5d) $00:         
+; 092 ($fc5c) $00:         
+; 091 ($fc5b) $20:   X     
+; 090 ($fc5a) $02:       X 
+; 089 ($fc59) $4a:  X  X X 
+; 088 ($fc58) $04:      X  
+; 087 ($fc57) $00:         
+; 086 ($fc56) $00:         
+; 085 ($fc55) $18:    XX   
+; 084 ($fc54) $24:   X  X  
+; 083 ($fc53) $18:    XX   
+; 082 ($fc52) $00:         
+; 081 ($fc51) $00:         
+; 080 ($fc50) $00:         
+; 079 ($fc4f) $00:         
+; 078 ($fc4e) $00:         
+; 077 ($fc4d) $00:         
+; 076 ($fc4c) $00:         
                 .byte 0
                 .byte 0
                 .byte 0
@@ -3110,6 +3178,26 @@ right_digits_pf_data:.byte 7
                 .byte $20
                 .byte 0
                 .byte 0
+grp_splash2_end:
+
+; 111 ($fc6f) $00:         
+; 110 ($fc6e) $00:         
+; 109 ($fc6d) $10:    X    
+; 108 ($fc6c) $82: X     X 
+; 107 ($fc6b) $40:  X      
+; 106 ($fc6a) $00:         
+; 105 ($fc69) $00:         
+; 104 ($fc68) $3c:   XXXX  
+; 103 ($fc67) $42:  X    X 
+; 102 ($fc66) $42:  X    X 
+; 101 ($fc65) $42:  X    X 
+; 100 ($fc64) $3c:   XXXX  
+; 099 ($fc63) $00:         
+; 098 ($fc62) $00:         
+; 097 ($fc61) $00:         
+; 096 ($fc60) $00:         
+; 095 ($fc5f) $00:         
+; 094 ($fc5e) $00:         
                 .byte 0
                 .byte 0
                 .byte 0
@@ -3128,6 +3216,26 @@ right_digits_pf_data:.byte 7
                 .byte $10
                 .byte 0
                 .byte 0
+grp_splash1_end:
+
+; 129 ($fc81) $00:         
+; 128 ($fc80) $00:         
+; 127 ($fc7f) $00:         
+; 126 ($fc7e) $00:         
+; 125 ($fc7d) $00:         
+; 124 ($fc7c) $00:         
+; 123 ($fc7b) $3c:   XXXX  
+; 122 ($fc7a) $42:  X    X 
+; 121 ($fc79) $42:  X    X 
+; 120 ($fc78) $81: X      X
+; 119 ($fc77) $42:  X    X 
+; 118 ($fc76) $42:  X    X 
+; 117 ($fc75) $3c:   XXXX  
+; 116 ($fc74) $00:         
+; 115 ($fc73) $00:         
+; 114 ($fc72) $00:         
+; 113 ($fc71) $00:         
+; 112 ($fc70) $00:         
                 .byte 0
                 .byte 0
                 .byte 0
@@ -3146,6 +3254,26 @@ right_digits_pf_data:.byte 7
                 .byte 0
                 .byte 0
                 .byte 0
+grp_splash0_end:
+
+; 147 ($fc93) $00:         
+; 146 ($fc92) $00:         
+; 145 ($fc91) $7d:  XXXXX X
+; 144 ($fc90) $11:    X   X
+; 143 ($fc8f) $11:    X   X
+; 142 ($fc8e) $11:    X   X
+; 141 ($fc8d) $11:    X   X
+; 140 ($fc8c) $11:    X   X
+; 139 ($fc8b) $11:    X   X
+; 138 ($fc8a) $00:         
+; 137 ($fc89) $00:         
+; 136 ($fc88) $3c:   XXXX  
+; 135 ($fc87) $20:   X     
+; 134 ($fc86) $21:   X    X
+; 133 ($fc85) $39:   XXX  X
+; 132 ($fc84) $21:   X    X
+; 131 ($fc83) $21:   X    X
+; 130 ($fc82) $3d:   XXXX X
                 .byte $3D       ; =
                 .byte $21       ; !
                 .byte $21       ; !
@@ -3164,6 +3292,25 @@ right_digits_pf_data:.byte 7
                 .byte $7D       ; }
                 .byte 0
                 .byte 0
+
+; 165 ($fca5) $00:         
+; 164 ($fca4) $00:         
+; 163 ($fca3) $00:         
+; 162 ($fca2) $00:         
+; 161 ($fca1) $c8: XX  X   
+; 160 ($fca0) $54:  X X X  
+; 159 ($fc9f) $5c:  X XXX  
+; 158 ($fc9e) $50:  X X    
+; 157 ($fc9d) $4c:  X  XX  
+; 156 ($fc9c) $00:         
+; 155 ($fc9b) $00:         
+; 154 ($fc9a) $04:      X  
+; 153 ($fc99) $04:      X  
+; 152 ($fc98) $9c: X  XXX  
+; 151 ($fc97) $54:  X X X  
+; 150 ($fc96) $54:  X X X  
+; 149 ($fc95) $54:  X X X  
+; 148 ($fc94) $5c:  X XXX  
                 .byte $5C       ; \
                 .byte $54       ; T
                 .byte $54       ; T
@@ -3182,6 +3329,25 @@ right_digits_pf_data:.byte 7
                 .byte 0
                 .byte 0
                 .byte 0
+
+; 183 ($fcb7) $00:         
+; 182 ($fcb6) $00:         
+; 181 ($fcb5) $04:      X  
+; 180 ($fcb4) $0e:     XXX 
+; 179 ($fcb3) $3b:   XXX XX
+; 178 ($fcb2) $7f:  XXXXXXX
+; 177 ($fcb1) $7f:  XXXXXXX
+; 176 ($fcb0) $fc: XXXXXX  
+; 175 ($fcaf) $fe: XXXXXXX 
+; 174 ($fcae) $fe: XXXXXXX 
+; 173 ($fcad) $7b:  XXXX XX
+; 172 ($fcac) $7d:  XXXXX X
+; 171 ($fcab) $00:         
+; 170 ($fcaa) $00:         
+; 169 ($fca9) $00:         
+; 168 ($fca8) $00:         
+; 167 ($fca7) $00:         
+; 166 ($fca6) $00:         
                 .byte 0
                 .byte 0
                 .byte 0
@@ -3199,6 +3365,26 @@ right_digits_pf_data:.byte 7
                 .byte $E
                 .byte 4
                 .byte 0
+grp_frog5_end:
+
+; 201 ($fcc9) $00:         
+; 200 ($fcc8) $00:         
+; 199 ($fcc7) $04:      X  
+; 198 ($fcc6) $0e:     XXX 
+; 197 ($fcc5) $1b:    XX XX
+; 196 ($fcc4) $1f:    XXXXX
+; 195 ($fcc3) $3f:   XXXXXX
+; 194 ($fcc2) $3e:   XXXXX 
+; 193 ($fcc1) $7e:  XXXXXX 
+; 192 ($fcc0) $7b:  XXXX XX
+; 191 ($fcbf) $3c:   XXXX  
+; 190 ($fcbe) $70:  XXX    
+; 189 ($fcbd) $38:   XXX   
+; 188 ($fcbc) $0c:     XX  
+; 187 ($fcbb) $00:         
+; 186 ($fcba) $00:         
+; 185 ($fcb9) $00:         
+; 184 ($fcb8) $00:         
                 .byte 0
                 .byte 0
                 .byte 0
@@ -3218,6 +3404,26 @@ right_digits_pf_data:.byte 7
                 .byte 4
                 .byte 0
                 .byte 0
+grp_frog3_end:
+                
+; 219 ($fcdb) $00:         
+; 218 ($fcda) $00:         
+; 217 ($fcd9) $04:      X  
+; 216 ($fcd8) $0e:     XXX 
+; 215 ($fcd7) $1b:    XX XX
+; 214 ($fcd6) $1f:    XXXXX
+; 213 ($fcd5) $3f:   XXXXXX
+; 212 ($fcd4) $3e:   XXXXX 
+; 211 ($fcd3) $78:  XXXX   
+; 210 ($fcd2) $7c:  XXXXX  
+; 209 ($fcd1) $62:  XX   X 
+; 208 ($fcd0) $78:  XXXX   
+; 207 ($fccf) $1c:    XXX  
+; 206 ($fcce) $70:  XXX    
+; 205 ($fccd) $10:    X    
+; 204 ($fccc) $08:     X   
+; 203 ($fccb) $00:         
+; 202 ($fcca) $00:         
                 .byte 0
                 .byte 0
                 .byte 8
@@ -3236,6 +3442,26 @@ right_digits_pf_data:.byte 7
                 .byte 4
                 .byte 0
                 .byte 0
+grp_frog2_end:
+
+; 237 ($fced) $00:         
+; 236 ($fcec) $00:         
+; 235 ($fceb) $04:      X  
+; 234 ($fcea) $0e:     XXX 
+; 233 ($fce9) $1b:    XX XX
+; 232 ($fce8) $1f:    XXXXX
+; 231 ($fce7) $3f:   XXXXXX
+; 230 ($fce6) $3e:   XXXXX 
+; 229 ($fce5) $78:  XXXX   
+; 228 ($fce4) $7c:  XXXXX  
+; 227 ($fce3) $66:  XX  XX 
+; 226 ($fce2) $70:  XXX    
+; 225 ($fce1) $18:    XX   
+; 224 ($fce0) $08:     X   
+; 223 ($fcdf) $30:   XX    
+; 222 ($fcde) $20:   X     
+; 221 ($fcdd) $20:   X     
+; 220 ($fcdc) $00:         
                 .byte 0
                 .byte $20
                 .byte $20
@@ -3254,6 +3480,26 @@ right_digits_pf_data:.byte 7
                 .byte 4
                 .byte 0
                 .byte 0
+grp_frog1_end:
+
+; 255 ($fcff) $00:         
+; 254 ($fcfe) $00:         
+; 253 ($fcfd) $04:      X  
+; 252 ($fcfc) $0e:     XXX 
+; 251 ($fcfb) $1b:    XX XX
+; 250 ($fcfa) $1f:    XXXXX
+; 249 ($fcf9) $3f:   XXXXXX
+; 248 ($fcf8) $3e:   XXXXX 
+; 247 ($fcf7) $78:  XXXX   
+; 246 ($fcf6) $7c:  XXXXX  
+; 245 ($fcf5) $66:  XX  XX 
+; 244 ($fcf4) $60:  XX     
+; 243 ($fcf3) $20:   X     
+; 242 ($fcf2) $20:   X     
+; 241 ($fcf1) $20:   X     
+; 240 ($fcf0) $60:  XX     
+; 239 ($fcef) $40:  X      
+; 238 ($fcee) $40:  X      
                 .byte $40       ; @
                 .byte $40       ; @
                 .byte $60       ; `
@@ -3272,6 +3518,9 @@ right_digits_pf_data:.byte 7
                 .byte 4
                 .byte 0
                 .byte 0
+grp_frog0_end:
+                
+                
 pf0_data:       .byte 0
                 .byte 0
                 .byte 0
