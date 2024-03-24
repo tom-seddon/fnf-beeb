@@ -30,8 +30,9 @@ BUILD:=$(abspath ./build)
 .PHONY:build
 build: _folders
 	$(_V)$(TASS) fnf-2600.s65 --nostart "--list=$(BUILD)/fnf-2600.lst" "--output=$(BUILD)/fnf-2600.bin"
-	$(_V)$(SHELLCMD) sha1 "Frogs and Flies (USA).a26"
-	$(_V)$(SHELLCMD) sha1 "$(BUILD)/fnf-2600.bin"
+#	$(_V)$(SHELLCMD) sha1 "Frogs and Flies (USA).a26"
+#	$(_V)$(SHELLCMD) sha1 "$(BUILD)/fnf-2600.bin"
+	$(_V)$(SHELLCMD) -v cmp "$(BUILD)/fnf-2600.bin" "Frogs and Flies (USA).a26"
 
 .PHONY:_folders
 _folders:
