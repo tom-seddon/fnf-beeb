@@ -29,12 +29,16 @@ VBLANK:         .fill 1
 WSYNC:          .fill 1
                 ; wait for leading edge of horizontal blank
 unk_3:          .fill 1
-rCXP0FB_wNUSIZ0:.fill 1
-                ; R: D7 = collision M0/PF; D6 = collision M0/BL
-                ; W: number-size player-missile 0
-rCXM1FB_wNUSIZ1:.fill 1
-                ; R: D7 = collision M1/PF; D6 = collision M1/BL
-                ; W: number-size player-missile 1
+CXP0FB:                ; R: D7 = collision M0/PF; D6 = collision M0/BL
+NUSIZ0:                         ; W: number-size player-missile 0
+                .fill 1
+                
+                
+                
+CXM1FB:                ; R: D7 = collision M1/PF; D6 = collision M1/BL
+NUSIZ1:                ; W: number-size player-missile 1
+                .fill 1
+                
 COLUP0:         .fill 1
                 ; colour-lum player 0
 COLUP1:         .fill 1
@@ -53,12 +57,19 @@ CTRLPF:         .fill 1
                 ;          0 = players drawn on top of playfield
                 ; D1: SCORE: 1 = left/right halves have player colours
                 ; D0: REF: 1 = reflect playfield
-rINPT3_wREFP0:  .fill 1
+
                 ; reflect player 0
                 ; D3: 1 = reflect player 0
-rINPT4_wREFP1:  .fill 1
+INPT3:
+REFP0:
+                .fill 1
+
                 ; reflect player 1
                 ; D3: 1 = reflect player 1
+INPT4:
+REFP1:
+                .fill 1
+
 PF0:            .fill 1
                 ; playfield register byte 0
 PF1:            .fill 1
@@ -236,8 +247,7 @@ byte_B8:        .fill 1
 unk_B9:         .fill 1
                 .fill 1
 pl_scores:      .fill 2
-unk_BD:         .fill 1
-unk_BE:         .fill 1
+unk_BD:         .fill 2
 unk_BF:         .fill 1
                 .fill 1
 
@@ -268,8 +278,7 @@ pl_xs:          .fill 2
 mi_xs:          .fill 2
 pl_ys:          .fill 2
 mi_ys:          .fill 2
-byte_DB:        .fill 1
-byte_DC:        .fill 1
+byte_DB:        .fill 2
 pl_joystick_fire:.fill 2
 byte_DF:        .fill 1
 p0_joystick_direction:.fill 1
@@ -806,17 +815,9 @@ main_loop:
                 lda #30         ; 1608 us; 25.125 scanlines
                 sta Tim64t      ; set 64 clock interval
                 lda SWCHB       ; Console switches
-                                ; +---+---+---+---+---+---+---+---+
-                                ; |Di1|Di0|   |   |Col|   |~GS|~GR|
-                                ; +-+-+-+-+---+---+-+-+---+-+-+-+-+
-                                ;   |   |           |       |   |
-                                ;   |   |           |       |   +--- 0 = game reset
-                                ;   |   |           |       +------- 0 = game select
-                                ;   |   |           +--------------- 0 = B&W, 1 = colour
-                                ;   |   +--------------------------- 0 = P0 amateur, 1 = P0 pro
-                                ;   +------------------------------- 0 = P1 amateur, 1 = P1 pro
                 lsr a           ; extract reset button state
                 bcc main        ; taken if reset button pressed
+
                 jsr sub_F6BE
                 jsr prepare_display
                 inc byte_B3
@@ -863,7 +864,7 @@ initial_addrs:  .byte VDELP1
                 .byte byte_B8
                 .byte byte_B7
                 .byte unk_BD
-                .byte unk_BE
+                .byte unk_BD+1
                 .byte pf0_data_ptr
                 .byte pf0_data_ptr+1
                 .byte pf1_data_ptr
@@ -882,7 +883,7 @@ initial_addrs:  .byte VDELP1
                 .byte pl_xs
                 .byte pl_xs+1
                 .byte byte_DB
-                .byte byte_DC
+                .byte byte_DB+1
                 .byte pl_flags+1; b7 = player difficulty (0=pro 1=amateur)
 initial_values: .byte 1
                 ; VDELP1
@@ -901,7 +902,7 @@ initial_values: .byte 1
                 .byte $FB       ;             ; p0_right_digit_ptr+1
                 .byte $FB       ;             ; p1_left_digit_ptr+1
                 .byte $FB       ;             ; p1_right_digit_ptr+1
-                .byte $FE       ;             ; enabl_data_ptr+1
+                .byte >sprite_row_selector_table ; enabl_data_ptr+1
                 .byte >grp_data ;             ; grp0_data_ptr+1
                 .byte >grp_data ;             ; grp1_data_ptr+1
                 .byte 7         ; p0_y
@@ -934,11 +935,12 @@ pl_state1a_dxs: .char 8, 4, 4, -4, -8, -$C, $C, $C
 pl_state1a_dys: .byte 8, $C, $C, $C, 8, 4, 4, 4
 pl_state1b_dxs: .char 11, 5, 5, -5, -11, -15, 15, 15
 pl_state1b_dys: .byte 11, 15, 15, 15, 11, 5, 5, 5
+                
 byte_F25B:
-                .byte $A
-                .byte $D
-                .byte $12
-                .byte $80
+                .byte 10
+                .byte 13
+                .byte 18
+                .byte 128
 
 
                 ; offsets of sprite ends
@@ -975,6 +977,12 @@ num_splash_frames=*-splash_frame_lsbs
 
 ;-------------------------------------------------------------------------
 
+; Entry conditions for pl_state routines:
+;
+; A = player state routine MSB (probably not useful)
+; X = player index
+; Y = player state index
+                
 pl_state_routines=[pn_state0,pn_state1,pn_state2,pn_state3,pn_state4,pn_state5,pn_state6,pn_state7,pn_state8,pn_state9,pn_state10,pn_state11,pn_state12]
 
 pl_state_routine_lsbs:.byte <pl_state_routines
@@ -1223,7 +1231,7 @@ pn_state10:     .block
                 sta byte_DB
                 lda #165
 
-                sta byte_DC
+                sta byte_DB+1
                 rts
                 .endblock
 
@@ -1446,10 +1454,10 @@ loc_F507:
 
 sub_F51B:       .block
                 lda pl_ys,x
-                bmi locret_F530
+                bmi locret_F530 ; taken if Y negative
                 cmp #8
-                bmi locret_F530
-                ldy #$FF
+                bmi locret_F530 ; taken if Y<8
+                ldy #$FF        ; Y=255
 
 loc_F525:
                 iny
@@ -1562,7 +1570,7 @@ loc_F598:
 
 loc_F59B:
                 ldy pl_joystick_fire,x; Y=old fire state
-                lda rINPT4_wREFP1,x   ; read joystick fire button
+                lda INPT4,x   ; read joystick fire button
                 sta pl_joystick_fire,x; save state
                 bmi locret_F5B3       ; taken if not pressed
                 tya                   ; A=old fire state
@@ -1788,12 +1796,10 @@ locret_F6BD:
 
 sub_F6BE:       .block
                 ldy #0          ; Y=0 implies M0/PF collision
-                lda rCXP0FB_wNUSIZ0; R: D7 = collision M0/PF; D6 = collision M0/BL
-                                   ; W: number-size player-missile 0
+                lda CXP0FB ; A7 = collision M0/PF; A6 = collision M0/BL
                 asl a              ; C=collision M0/PF; A7=collision M0/BL
                 bmi any_collision  ; taken if M0/BL collision
-                lda rCXM1FB_wNUSIZ1; R: D7 = collision M1/PF; D6 = collision M1/BL
-                                   ; W: number-size player-missile 1
+                lda CXM1FB ; A7 = collision M1/PF; A6 = collision M1/BL
                 asl a              ; C=collision M1/PF; A7=collision M1/BL
                 bpl no_collision   ; taken if no M0/BL collision
                 iny                ; Y=1 implies M1/BL collision
@@ -1809,14 +1815,17 @@ any_collision:
                 sbc pl_xs,x
                 cmp #6
                 bcc no_collision
+
+                ; frog ate fly?
                 jsr sub_FA6A
+
+                ; score+=2
                 lda pl_scores,x
                 sed
                 adc #2
                 cld
                 bcc loc_F6EA
                 lda #$99        ; clamp score at 99
-
 loc_F6EA:
                 sta pl_scores,x
                 ldx #0
@@ -2010,41 +2019,42 @@ unk_F796:       .byte 4
 
 ;-------------------------------------------------------------------------
 
-unk_F79E:       .byte $C4
-                .byte $E4       ;
-                .byte $C6       ;
-                .byte $C6       ;
+; background colours?
+unk_F79E:       .byte $C4       ; (0x40,0x7C,0x40)
+                .byte $E4       ; (0x68,0x70,0x34)
+                .byte $C6       ; (0x5C,0x9C,0x5C)
+                .byte $C6       ; (0x5C,0x9C,0x5C)
 
 ;-------------------------------------------------------------------------
 
-unk_F7A2:       .byte 0
-                .byte 0
-                .byte 0
-                .byte $70       ; p
-                .byte $90       ;
-                .byte $90       ;
-                .byte $90       ;
-                .byte $70       ; p
-                .byte $92       ;
-                .byte $92       ;
-                .byte $92       ;
-                .byte $72       ; r
-                .byte $94       ;
-                .byte $94       ;
-                .byte $94       ;
-                .byte $72       ; r
-                .byte $96       ;
-                .byte $96       ;
-                .byte $96       ;
-                .byte $74       ; t
-                .byte $98       ;
-                .byte $98       ;
-                .byte $98       ;
-                .byte $74       ; t
-                .byte $9A       ;
-                .byte $9A       ;
-                .byte $9A       ;
-                .byte $74       ; t
+unk_F7A2:       .byte 0         ; (0x00,0x00,0x00)
+                .byte 0         ; (0x00,0x00,0x00)
+                .byte 0         ; (0x00,0x00,0x00)
+                .byte $70       ; (0x14,0x00,0x84)
+                .byte $90       ; (0x00,0x18,0x7C)
+                .byte $90       ; (0x00,0x18,0x7C)
+                .byte $90       ; (0x00,0x18,0x7C)
+                .byte $70       ; (0x14,0x00,0x84)
+                .byte $92       ; (0x1C,0x38,0x90)
+                .byte $92       ; (0x1C,0x38,0x90)
+                .byte $92       ; (0x1C,0x38,0x90)
+                .byte $72       ; (0x30,0x20,0x98)
+                .byte $94       ; (0x38,0x54,0xA8)
+                .byte $94       ; (0x38,0x54,0xA8)
+                .byte $94       ; (0x38,0x54,0xA8)
+                .byte $72       ; (0x30,0x20,0x98)
+                .byte $96       ; (0x50,0x70,0xBC)
+                .byte $96       ; (0x50,0x70,0xBC)
+                .byte $96       ; (0x50,0x70,0xBC)
+                .byte $74       ; (0x4C,0x3C,0xAC)
+                .byte $98       ; (0x68,0x88,0xCC)
+                .byte $98       ; (0x68,0x88,0xCC)
+                .byte $98       ; (0x68,0x88,0xCC)
+                .byte $74       ; (0x4C,0x3C,0xAC)
+                .byte $9A       ; (0x7C,0x9C,0xDC)
+                .byte $9A       ; (0x7C,0x9C,0xDC)
+                .byte $9A       ; (0x7C,0x9C,0xDC)
+                .byte $74       ; (0x4C,0x3C,0xAC)
 
 ;-------------------------------------------------------------------------
 
@@ -2085,11 +2095,11 @@ prepare_players_loop:
                 tay             ; Y=2*player index
                 lda #$FE        ; MSB of sprite row selector table
                 sta p0_sprite_row_selector_ptr+1,y; set ptr MSB
-                lda #bottom_of_sprite-sprite_row_selector_table ; $fe52 is the right table address for the sprite at the bottom of the screen
+                lda #<bottom_of_sprite
                 sec
                 sbc pl_ys,x
                 sta p0_sprite_row_selector_ptr,y; set ptr LSB
-                lda #bottom_of_sprite-sprite_row_selector_table
+                lda #<bottom_of_sprite
                 sbc mi_ys,x     ; as above, but for missile enable
                 sta enam0_data_ptr,y
                 lda byte_DB,x
@@ -2098,7 +2108,7 @@ prepare_players_loop:
                 sta grp0_data_ptr,y
                 lda pl_flags,x
                 and #8          ; mask out reflect bit
-                sta rINPT3_wREFP0,x; reflect the player sprite as required
+                sta REFP0,x; reflect the player sprite as required
                 dex
                 beq prepare_players_loop
                 lda COLUP0      ; colour-lum player 0
@@ -2146,7 +2156,7 @@ loc_F84B:
 ;-------------------------------------------------------------------------
 
 loc_F850:
-                lda #$52
+                lda #<bottom_of_sprite
                 sta enabl_data_ptr
                 lda #0
 
@@ -2239,10 +2249,8 @@ loc_F8BB:
 loc_F8C4:
                 stx enam0_data_ptr+1
                 stx enam1_data_ptr+1
-                sty rCXP0FB_wNUSIZ0; R: D7 = collision M0/PF; D6 = collision M0/BL
-                                   ; W: number-size player-missile 0
-                sty rCXM1FB_wNUSIZ1; R: D7 = collision M1/PF; D6 = collision M1/BL
-                                   ; W: number-size player-missile 1
+                sty NUSIZ0
+                sty NUSIZ1
                 lda byte_B3
                 lsr a
                 bcs loc_F8E1
@@ -2613,13 +2621,13 @@ sound_routine_msbs:.byte >sound_routines
 ; | AUDC | AUDV |
 ; +------+------+
 audc_and_audv_by_sound:
-                .byte $60;
-                .byte $81       ;
-                .byte $80       ;
-                .byte $43       ; C
-                .byte $43       ; C
-                .byte $60       ; `
-                .byte $40       ; @
+                .byte $60
+                .byte $81
+                .byte $80
+                .byte $43
+                .byte $43
+                .byte $60
+                .byte $40
                 
                 ; AUDF setting for sound
 audf_by_sound:
@@ -3777,8 +3785,12 @@ pf2_data:       .byte $21; !
                 .byte 0
                 .byte 0
                 .byte 0
-sprite_row_selector_table:.byte 0; big table that has 8 entries in the middle with bit 7 set.
-                ; used to decide which scanlines have sprite data in them.
+
+                .cerror (*&$ff)!=0
+; big table that has 8 entries in the middle with bit 7 set. used to
+; decide which scanlines have sprite data in them.
+sprite_row_selector_table:
+                .byte 0
                 .byte 0
                 .byte 0
                 .byte 0
