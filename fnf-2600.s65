@@ -812,7 +812,13 @@ clear_memory:
                 jsr initialise_memory
 
 main_loop:
+                .if PAL
+                ; 59*64 = 3776 clocks
+                lda #59         ; 3162.4 us; 49.4125 scanlines
+                .else
+                ; 30*64 = 1920 clocks
                 lda #30         ; 1608 us; 25.125 scanlines
+                .endif
                 sta Tim64t      ; set 64 clock interval
                 lda SWCHB       ; Console switches
                 lsr a           ; extract reset button state
@@ -835,7 +841,11 @@ do_vertical_sync:
                 dex
                 bne do_vertical_sync
                 stx VSYNC       ; clear vertical sync
+                .if PAL
+                lda #78         ; vblank time = 4180.8 us; 64.325 scanlines
+                .else
                 lda #48
+                .endif
                 sta Tim64t      ; vblank time = 2527.8 us; 39.5 scanlines
                 jsr handle_players_inputs
                 jsr update_player_physics
@@ -888,9 +898,17 @@ initial_addrs:  .byte VDELP1
 initial_values: .byte 1
                 ; VDELP1
                 .byte 4         ; COLUP0
+                .if PAL
+                .byte $42       ; 2            ; COLUP1
+                .else
                 .byte $32       ; 2            ; COLUP1
+                .endif
                 .byte 6         ; p0_colour
+                .if PAL
+                .byte $46       ; 6            ; p1_colour
+                .else
                 .byte $36       ; 6            ; p1_colour
+                .endif
                 .byte $1A       ; b8
                 .byte 7         ; b7
                 .byte $A        ; bd
@@ -1190,7 +1208,11 @@ pn_state9:
                 sta pl_states
                 lda #$80
                 sta byte_B4
+                .if PAL
+                lda #$2f
+                .else
                 lda #$FF
+                .endif
                 sta COLUP0      ; colour-lum player 0
                 sta COLUP1      ; colour-lum player 1
                 lda pl_flags  
@@ -1230,7 +1252,6 @@ pn_state10:     .block
                 lda #147
                 sta byte_DB
                 lda #165
-
                 sta byte_DB+1
                 rts
                 .endblock
@@ -1262,9 +1283,9 @@ pn_state12:
 ;-------------------------------------------------------------------------
 
 unk_F40B:       .byte $20
-                .byte $2B       ; +
-unk_F40D:       .byte $62; b
-                .byte $6E       ; n
+                .byte $2B
+unk_F40D:       .byte $62
+                .byte $6E
 
 ;-------------------------------------------------------------------------
 
@@ -2020,14 +2041,60 @@ unk_F796:       .byte 4
 ;-------------------------------------------------------------------------
 
 ; background colours?
-unk_F79E:       .byte $C4       ; (0x40,0x7C,0x40)
+unk_F79E:
+                .if PAL
+
+                .byte $54
+                .byte $24
+                .byte $56
+                .byte $56
+
+                .else
+
+                .byte $C4       ; (0x40,0x7C,0x40)
                 .byte $E4       ; (0x68,0x70,0x34)
                 .byte $C6       ; (0x5C,0x9C,0x5C)
                 .byte $C6       ; (0x5C,0x9C,0x5C)
 
+                .endif
+                
 ;-------------------------------------------------------------------------
 
-unk_F7A2:       .byte 0         ; (0x00,0x00,0x00)
+unk_F7A2:
+                .if PAL
+
+                .byte $00
+                .byte $00
+                .byte $00
+                .byte $d0
+                .byte $b0
+                .byte $b0
+                .byte $b0
+                .byte $d0
+                .byte $b2
+                .byte $b2
+                .byte $b2
+                .byte $d2
+                .byte $b4
+                .byte $b4
+                .byte $b4
+                .byte $d2
+                .byte $b6
+                .byte $b6
+                .byte $b6
+                .byte $d4
+                .byte $b8
+                .byte $b8
+                .byte $b8
+                .byte $d4
+                .byte $ba
+                .byte $ba
+                .byte $ba
+                .byte $d4
+                
+                .else
+                
+                .byte 0         ; (0x00,0x00,0x00)
                 .byte 0         ; (0x00,0x00,0x00)
                 .byte 0         ; (0x00,0x00,0x00)
                 .byte $70       ; (0x14,0x00,0x84)
@@ -2056,6 +2123,7 @@ unk_F7A2:       .byte 0         ; (0x00,0x00,0x00)
                 .byte $9A       ; (0x7C,0x9C,0xDC)
                 .byte $74       ; (0x4C,0x3C,0xAC)
 
+                .endif
 ;-------------------------------------------------------------------------
 
 prepare_display:.block
@@ -2269,18 +2337,30 @@ loc_F8E1:
 
 ;-------------------------------------------------------------------------
 
-p0_colours:     .byte 4
+p0_colours:
+                .byte 4
                 .byte 6
                 .byte 6
                 .byte 2
                 .byte 2
                 .byte 4
-p1_colours:     .byte $32; 2
-                .byte $32       ; 2
-                .byte $34       ; 4
-                .byte $30       ; 0
-                .byte $32       ; 2
-                .byte $34       ; 4
+
+p1_colours:
+                .if PAL
+                .byte $42
+                .byte $42
+                .byte $44
+                .byte $40
+                .byte $42
+                .byte $44
+                .else
+                .byte $32
+                .byte $32
+                .byte $34
+                .byte $30
+                .byte $32
+                .byte $34
+                .endif
 
 ;-------------------------------------------------------------------------
 
@@ -2705,95 +2785,12 @@ locret_FAA6:
 
 ;-------------------------------------------------------------------------
 
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
+                .if PAL
+                .align 256,$00
+                .else
+                .align 256,$ff
+                .endif
+
 left_digits_pf_data:.byte $70; p
                 .byte $50       ; P
                 .byte $50       ; P
@@ -2894,221 +2891,18 @@ right_digits_pf_data:.byte 7
                 .byte 7
                 .byte 5
                 .byte 7
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
 
-                .cerror (*&$ff)!=0,format("%04x",*)
+                .if PAL
+                .align 256,$00
+                .else
+                .align 256,$ff
+                .endif
 grp_data:
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
+                .if PAL
+                .fill $38,$00
+                .else
+                .fill $38,$ff
+                .endif
                 .byte 0
                 .byte 0
 
@@ -3786,7 +3580,7 @@ pf2_data:       .byte $21; !
                 .byte 0
                 .byte 0
 
-                .cerror (*&$ff)!=0
+                .cwarn (*&$ff)!=0
 ; big table that has 8 entries in the middle with bit 7 set. used to
 ; decide which scanlines have sprite data in them.
 sprite_row_selector_table:
@@ -4211,92 +4005,11 @@ unk_FEB5:       .byte 3
                 .byte 0
                 .byte 0
                 .byte 0
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
-                .byte $FF
+                .if PAL
+                .fill $fffa-*,$00
+                .else
+                .fill $fffa-*,$ff
+                .endif
                 .word main
                 .word main
                 .word main
