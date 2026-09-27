@@ -1,0 +1,151 @@
+;-------------------------------------------------------------------------
+; RIOT registers (2600 only).
+;-------------------------------------------------------------------------
+
+; Segment type: Regular
+                ;.segment RIOT
+* = $280
+SWCHA:          .fill 1; Joystick input:
+                ; +--+--+--+--+--+--+--+--+
+                ; |~R|~L|~D|~U|~R|~L|~D|~U|
+                ; +--+--+--+--+--+--+--+--+
+                ;  \----|----/ \----|----/
+                ;       P0          P1
+Swacnt:         .fill 1
+SWCHB:          .fill 1
+                ; Console switches
+                ; +---+---+---+---+---+---+---+---+
+                ; |Di1|Di0|   |   |Col|   |~GS|~GR|
+                ; +-+-+-+-+---+---+-+-+---+-+-+-+-+
+                ;   |   |           |       |   |
+                ;   |   |           |       |   +--- 0 = game reset
+                ;   |   |           |       +------- 0 = game select
+                ;   |   |           +--------------- 0 = B&W, 1 = colour
+                ;   |   +--------------------------- 0 = P0 amateur, 1 = P0 pro
+                ;   +------------------------------- 0 = P1 amateur, 1 = P1 pro
+Swbcnt:         .fill 1
+Intim:          .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+Tim1t:          .fill 1; set 1 clock interval
+Tim8t:          .fill 1; set 8 clock interval
+Tim64t:         .fill 1; set 64 clock interval
+T1024t:         .fill 1; set 1024 clock interval
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+; end of 'RIOT'

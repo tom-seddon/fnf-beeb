@@ -1,0 +1,120 @@
+;-------------------------------------------------------------------------
+; Game RAM. 128 bytes, originally at $80.
+;
+; The layout must be preserved exactly: several arrays are accessed as
+; 4-entry [frog0,frog1,fly0,fly1] arrays, and zp,x wraparound is
+; relied upon in places.
+;-------------------------------------------------------------------------
+
+pf_eor_value:   .fill 1
+                ; value EORd with playfield data
+byte_81:        .fill 1
+                .fill 1
+byte_83:        .fill 1
+                .fill 1
+scanline_counter:.fill 1
+                ; temp storage for Y register
+                .fill 1
+byte_87:        .fill 1
+pl_colours:     .fill 2
+p0_left_digit_ptr:.fill 2
+p0_right_digit_ptr:.fill 2
+p1_left_digit_ptr:.fill 2
+p1_right_digit_ptr:.fill 2
+pf0_data_ptr:   .fill 2
+pf1_data_ptr:   .fill 2
+pf2_data_ptr:   .fill 2
+byte_98:        .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+byte_9C:        .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+p0_sprite_row_selector_ptr:.fill 2
+p1_sprite_row_selector_ptr:.fill 2
+enam0_data_ptr: .fill 2
+enam1_data_ptr: .fill 2
+enabl_data_ptr: .fill 2
+grp0_data_ptr:  .fill 2
+grp1_data_ptr:  .fill 2
+pl_hpos:        .fill 2
+m0_hpos:        .fill 1
+m1_hpos:        .fill 1
+b_hpos:         .fill 1
+byte_B3:        .fill 1
+byte_B4:        .fill 1
+pn_state_routine_addr:.fill 2
+byte_B7:        .fill 1
+byte_B8:        .fill 1
+unk_B9:         .fill 1
+                .fill 1
+pl_scores:      .fill 2
+unk_BD:         .fill 2
+unk_BF:         .fill 1
+                .fill 1
+
+                ; Per-player counter, used for counting stuff
+pl_counters:         .fill 2
+
+pl_flags:       .block
+                .fill 2
+amateur=$80                     ; 0=pro 1=amateur
+; bit 6 = AI control? tested by loc_F304... randomly sticks tongue out...
+is_moving=$08                   ; might actually be the reflection flag??
+tongue_out=$02                  ; 0=in 1=out
+                .endblock                
+
+                ; Per-player state
+pl_states:      .fill 2
+
+                ; Per-player tongue counters
+                
+pl_tongue_counters:.fill 2
+unk_C9:         .fill 2
+                ; The following pairs of 2-byte arrays form 4-entry arrays
+                ; indexed [frog0,frog1,fly0,fly1] - see
+                ; update_player_physics. (mi_dxs/mi_dys used to be
+                ; called mi_visibles/byte_D1.)
+pl_dxs:         .fill 2
+mi_dxs:         .fill 2
+pl_dys:         .fill 2
+mi_dys:         .fill 2
+pl_xs:          .fill 2
+mi_xs:          .fill 2
+pl_ys:          .fill 2
+mi_ys:          .fill 2
+byte_DB:        .fill 2
+pl_joystick_fire:.fill 2
+byte_DF:        .fill 1
+p0_joystick_direction:.fill 1
+p1_joystick_direction:.fill 1
+player_inputs:  .fill 1
+                .fill 1
+random_seed:    .fill 1
+byte_E5:        .fill 1
+unk_E6:         .fill 1
+                .fill 1
+ch_sounds:      .fill 2
+ch_audio_counters:.fill 2
+unk_EC:         .fill 1
+                .fill 1
+sound_routine_temp:.fill 2
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+unk_F6:         .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+; end of 'RAM'

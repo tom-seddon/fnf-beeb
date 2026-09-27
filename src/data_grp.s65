@@ -1,0 +1,434 @@
+;-------------------------------------------------------------------------
+; Sprite data. Must stay page-aligned and byte-identical: the logic
+; refers to frames by address LSB, sometimes as literal constants.
+;-------------------------------------------------------------------------
+
+                .if PAL
+                .align 256,$00
+                .else
+                .align 256,$ff
+                .endif
+grp_data:
+                .if PAL
+                .fill $38,$00
+                .else
+                .fill $38,$ff
+                .endif
+                .byte 0
+                .byte 0
+
+; 075 ($fc4b) $00:         
+; 074 ($fc4a) $00:         
+; 073 ($fc49) $04:      X  
+; 072 ($fc48) $20:   X     
+; 071 ($fc47) $00:         
+; 070 ($fc46) $84: X    X  
+; 069 ($fc45) $c9: XX  X  X
+; 068 ($fc44) $4a:  X  X X 
+; 067 ($fc43) $4c:  X  XX  
+; 066 ($fc42) $76:  XXX XX 
+; 065 ($fc41) $2c:   X XX  
+; 064 ($fc40) $34:   XX X  
+; 063 ($fc3f) $18:    XX   
+; 062 ($fc3e) $00:         
+; 061 ($fc3d) $00:         
+; 060 ($fc3c) $00:         
+; 059 ($fc3b) $00:         
+; 058 ($fc3a) $00:         
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $18
+                .byte $34       ; 4
+                .byte $2C       ; ,
+                .byte $76       ; v
+                .byte $4C       ; L
+                .byte $4A       ; J
+                .byte $C9       ;
+                .byte $84       ;
+                .byte 0
+                .byte $20
+                .byte 4
+                .byte 0
+                .byte 0
+grp_splash3_end:
+
+; 093 ($fc5d) $00:         
+; 092 ($fc5c) $00:         
+; 091 ($fc5b) $20:   X     
+; 090 ($fc5a) $02:       X 
+; 089 ($fc59) $4a:  X  X X 
+; 088 ($fc58) $04:      X  
+; 087 ($fc57) $00:         
+; 086 ($fc56) $00:         
+; 085 ($fc55) $18:    XX   
+; 084 ($fc54) $24:   X  X  
+; 083 ($fc53) $18:    XX   
+; 082 ($fc52) $00:         
+; 081 ($fc51) $00:         
+; 080 ($fc50) $00:         
+; 079 ($fc4f) $00:         
+; 078 ($fc4e) $00:         
+; 077 ($fc4d) $00:         
+; 076 ($fc4c) $00:         
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $18
+                .byte $24       ; $
+                .byte $18
+                .byte 0
+                .byte 0
+                .byte 4
+                .byte $4A       ; J
+                .byte 2
+                .byte $20
+                .byte 0
+                .byte 0
+grp_splash2_end:
+
+; 111 ($fc6f) $00:         
+; 110 ($fc6e) $00:         
+; 109 ($fc6d) $10:    X    
+; 108 ($fc6c) $82: X     X 
+; 107 ($fc6b) $40:  X      
+; 106 ($fc6a) $00:         
+; 105 ($fc69) $00:         
+; 104 ($fc68) $3c:   XXXX  
+; 103 ($fc67) $42:  X    X 
+; 102 ($fc66) $42:  X    X 
+; 101 ($fc65) $42:  X    X 
+; 100 ($fc64) $3c:   XXXX  
+; 099 ($fc63) $00:         
+; 098 ($fc62) $00:         
+; 097 ($fc61) $00:         
+; 096 ($fc60) $00:         
+; 095 ($fc5f) $00:         
+; 094 ($fc5e) $00:         
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $3C       ; <
+                .byte $42       ; B
+                .byte $42       ; B
+                .byte $42       ; B
+                .byte $3C       ; <
+                .byte 0
+                .byte 0
+                .byte $40       ; @
+                .byte $82       ;
+                .byte $10
+                .byte 0
+                .byte 0
+grp_splash1_end:
+
+; 129 ($fc81) $00:         
+; 128 ($fc80) $00:         
+; 127 ($fc7f) $00:         
+; 126 ($fc7e) $00:         
+; 125 ($fc7d) $00:         
+; 124 ($fc7c) $00:         
+; 123 ($fc7b) $3c:   XXXX  
+; 122 ($fc7a) $42:  X    X 
+; 121 ($fc79) $42:  X    X 
+; 120 ($fc78) $81: X      X
+; 119 ($fc77) $42:  X    X 
+; 118 ($fc76) $42:  X    X 
+; 117 ($fc75) $3c:   XXXX  
+; 116 ($fc74) $00:         
+; 115 ($fc73) $00:         
+; 114 ($fc72) $00:         
+; 113 ($fc71) $00:         
+; 112 ($fc70) $00:         
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $3C       ; <
+                .byte $42       ; B
+                .byte $42       ; B
+                .byte $81       ;
+                .byte $42       ; B
+                .byte $42       ; B
+                .byte $3C       ; <
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+grp_splash0_end:
+
+; 147 ($fc93) $00:         
+; 146 ($fc92) $00:         
+; 145 ($fc91) $7d:  XXXXX X
+; 144 ($fc90) $11:    X   X
+; 143 ($fc8f) $11:    X   X
+; 142 ($fc8e) $11:    X   X
+; 141 ($fc8d) $11:    X   X
+; 140 ($fc8c) $11:    X   X
+; 139 ($fc8b) $11:    X   X
+; 138 ($fc8a) $00:         
+; 137 ($fc89) $00:         
+; 136 ($fc88) $3c:   XXXX  
+; 135 ($fc87) $20:   X     
+; 134 ($fc86) $21:   X    X
+; 133 ($fc85) $39:   XXX  X
+; 132 ($fc84) $21:   X    X
+; 131 ($fc83) $21:   X    X
+; 130 ($fc82) $3d:   XXXX X
+                .byte $3D       ; =
+                .byte $21       ; !
+                .byte $21       ; !
+                .byte $39       ; 9
+                .byte $21       ; !
+                .byte $20
+                .byte $3C       ; <
+                .byte 0
+                .byte 0
+                .byte $11
+                .byte $11
+                .byte $11
+                .byte $11
+                .byte $11
+                .byte $11
+                .byte $7D       ; }
+                .byte 0
+                .byte 0
+
+; 165 ($fca5) $00:         
+; 164 ($fca4) $00:         
+; 163 ($fca3) $00:         
+; 162 ($fca2) $00:         
+; 161 ($fca1) $c8: XX  X   
+; 160 ($fca0) $54:  X X X  
+; 159 ($fc9f) $5c:  X XXX  
+; 158 ($fc9e) $50:  X X    
+; 157 ($fc9d) $4c:  X  XX  
+; 156 ($fc9c) $00:         
+; 155 ($fc9b) $00:         
+; 154 ($fc9a) $04:      X  
+; 153 ($fc99) $04:      X  
+; 152 ($fc98) $9c: X  XXX  
+; 151 ($fc97) $54:  X X X  
+; 150 ($fc96) $54:  X X X  
+; 149 ($fc95) $54:  X X X  
+; 148 ($fc94) $5c:  X XXX  
+                .byte $5C       ; \
+                .byte $54       ; T
+                .byte $54       ; T
+                .byte $54       ; T
+                .byte $9C       ;
+                .byte 4
+                .byte 4
+                .byte 0
+                .byte 0
+                .byte $4C       ; L
+                .byte $50       ; P
+                .byte $5C       ; \
+                .byte $54       ; T
+                .byte $C8       ;
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+
+; 183 ($fcb7) $00:         
+; 182 ($fcb6) $00:         
+; 181 ($fcb5) $04:      X  
+; 180 ($fcb4) $0e:     XXX 
+; 179 ($fcb3) $3b:   XXX XX
+; 178 ($fcb2) $7f:  XXXXXXX
+; 177 ($fcb1) $7f:  XXXXXXX
+; 176 ($fcb0) $fc: XXXXXX  
+; 175 ($fcaf) $fe: XXXXXXX 
+; 174 ($fcae) $fe: XXXXXXX 
+; 173 ($fcad) $7b:  XXXX XX
+; 172 ($fcac) $7d:  XXXXX X
+; 171 ($fcab) $00:         
+; 170 ($fcaa) $00:         
+; 169 ($fca9) $00:         
+; 168 ($fca8) $00:         
+; 167 ($fca7) $00:         
+; 166 ($fca6) $00:         
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $7D       ; }
+                .byte $7B       ; {
+                .byte $FE       ;
+                .byte $FE       ;
+                .byte $FC       ;
+                .byte $7F       ;
+                .byte $7F       ;
+                .byte $3B       ; ;
+                .byte $E
+                .byte 4
+                .byte 0
+grp_frog5_end:
+
+; 201 ($fcc9) $00:         
+; 200 ($fcc8) $00:         
+; 199 ($fcc7) $04:      X  
+; 198 ($fcc6) $0e:     XXX 
+; 197 ($fcc5) $1b:    XX XX
+; 196 ($fcc4) $1f:    XXXXX
+; 195 ($fcc3) $3f:   XXXXXX
+; 194 ($fcc2) $3e:   XXXXX 
+; 193 ($fcc1) $7e:  XXXXXX 
+; 192 ($fcc0) $7b:  XXXX XX
+; 191 ($fcbf) $3c:   XXXX  
+; 190 ($fcbe) $70:  XXX    
+; 189 ($fcbd) $38:   XXX   
+; 188 ($fcbc) $0c:     XX  
+; 187 ($fcbb) $00:         
+; 186 ($fcba) $00:         
+; 185 ($fcb9) $00:         
+; 184 ($fcb8) $00:         
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte 0
+                .byte $C
+                .byte $38       ; 8
+                .byte $70       ; p
+                .byte $3C       ; <
+                .byte $7B       ; {
+                .byte $7E       ; ~
+                .byte $3E       ; >
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $1B
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+grp_frog3_end:
+                
+; 219 ($fcdb) $00:         
+; 218 ($fcda) $00:         
+; 217 ($fcd9) $04:      X  
+; 216 ($fcd8) $0e:     XXX 
+; 215 ($fcd7) $1b:    XX XX
+; 214 ($fcd6) $1f:    XXXXX
+; 213 ($fcd5) $3f:   XXXXXX
+; 212 ($fcd4) $3e:   XXXXX 
+; 211 ($fcd3) $78:  XXXX   
+; 210 ($fcd2) $7c:  XXXXX  
+; 209 ($fcd1) $62:  XX   X 
+; 208 ($fcd0) $78:  XXXX   
+; 207 ($fccf) $1c:    XXX  
+; 206 ($fcce) $70:  XXX    
+; 205 ($fccd) $10:    X    
+; 204 ($fccc) $08:     X   
+; 203 ($fccb) $00:         
+; 202 ($fcca) $00:         
+                .byte 0
+                .byte 0
+                .byte 8
+                .byte $10
+                .byte $70       ; p
+                .byte $1C
+                .byte $78       ; x
+                .byte $62       ; b
+                .byte $7C       ; |
+                .byte $78       ; x
+                .byte $3E       ; >
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $1B
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+grp_frog2_end:
+
+; 237 ($fced) $00:         
+; 236 ($fcec) $00:         
+; 235 ($fceb) $04:      X  
+; 234 ($fcea) $0e:     XXX 
+; 233 ($fce9) $1b:    XX XX
+; 232 ($fce8) $1f:    XXXXX
+; 231 ($fce7) $3f:   XXXXXX
+; 230 ($fce6) $3e:   XXXXX 
+; 229 ($fce5) $78:  XXXX   
+; 228 ($fce4) $7c:  XXXXX  
+; 227 ($fce3) $66:  XX  XX 
+; 226 ($fce2) $70:  XXX    
+; 225 ($fce1) $18:    XX   
+; 224 ($fce0) $08:     X   
+; 223 ($fcdf) $30:   XX    
+; 222 ($fcde) $20:   X     
+; 221 ($fcdd) $20:   X     
+; 220 ($fcdc) $00:         
+                .byte 0
+                .byte $20
+                .byte $20
+                .byte $30       ; 0
+                .byte 8
+                .byte $18
+                .byte $70       ; p
+                .byte $66       ; f
+                .byte $7C       ; |
+                .byte $78       ; x
+                .byte $3E       ; >
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $1B
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+grp_frog1_end:
+
+; 255 ($fcff) $00:         
+; 254 ($fcfe) $00:         
+; 253 ($fcfd) $04:      X  
+; 252 ($fcfc) $0e:     XXX 
+; 251 ($fcfb) $1b:    XX XX
+; 250 ($fcfa) $1f:    XXXXX
+; 249 ($fcf9) $3f:   XXXXXX
+; 248 ($fcf8) $3e:   XXXXX 
+; 247 ($fcf7) $78:  XXXX   
+; 246 ($fcf6) $7c:  XXXXX  
+; 245 ($fcf5) $66:  XX  XX 
+; 244 ($fcf4) $60:  XX     
+; 243 ($fcf3) $20:   X     
+; 242 ($fcf2) $20:   X     
+; 241 ($fcf1) $20:   X     
+; 240 ($fcf0) $60:  XX     
+; 239 ($fcef) $40:  X      
+; 238 ($fcee) $40:  X      
+                .byte $40       ; @
+                .byte $40       ; @
+                .byte $60       ; `
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $60       ; `
+                .byte $66       ; f
+                .byte $7C       ; |
+                .byte $78       ; x
+                .byte $3E       ; >
+                .byte $3F       ; ?
+                .byte $1F
+                .byte $1B
+                .byte $E
+                .byte 4
+                .byte 0
+                .byte 0
+grp_frog0_end:

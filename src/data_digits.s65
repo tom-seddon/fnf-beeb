@@ -1,0 +1,110 @@
+;-------------------------------------------------------------------------
+; Score digits, as PF1 data.
+;-------------------------------------------------------------------------
+
+                .if PAL
+                .align 256,$00
+                .else
+                .align 256,$ff
+                .endif
+
+left_digits_pf_data:.byte $70; p
+                .byte $50       ; P
+                .byte $50       ; P
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $20
+                .byte $70       ; p
+                .byte $40       ; @
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $10
+                .byte $10
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $40       ; @
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $40       ; @
+                .byte $70       ; p
+                .byte $10
+                .byte $10
+                .byte $10
+                .byte $10
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $70       ; p
+                .byte $70       ; p
+                .byte $10
+                .byte $70       ; p
+                .byte $50       ; P
+                .byte $70       ; p
+right_digits_pf_data:.byte 7
+                .byte 5
+                .byte 5
+                .byte 5
+                .byte 7
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 2
+                .byte 7
+                .byte 4
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 1
+                .byte 1
+                .byte 7
+                .byte 5
+                .byte 5
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 4
+                .byte 7
+                .byte 7
+                .byte 5
+                .byte 7
+                .byte 4
+                .byte 7
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 1
+                .byte 7
+                .byte 7
+                .byte 5
+                .byte 7
+                .byte 5
+                .byte 7
+                .byte 7
+                .byte 1
+                .byte 7
+                .byte 5
+                .byte 7

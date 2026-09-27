@@ -1,0 +1,194 @@
+;-------------------------------------------------------------------------
+; TIA registers (2600 only). Occupies $00-$7F.
+;-------------------------------------------------------------------------
+
+; Segment type: Regular
+                ;.segment RAM
+VSYNC:          .fill 1
+                ; vertical sync set-clear
+                ; D1: 1 = start vertical sync
+                ;     0 = stop vertical sync
+VBLANK:         .fill 1
+                ; vertical blank set-clear
+                ; D7: 1 = start vertical blank
+                ;     0 = stop vertical blank
+                ; D6: 1 = enable I4 I5 latches
+                ;     0 = disable I4 I5 latches
+                ; D1: 1 = dump I6 I1 I2 I3 ports to ground
+                ;     0 = remove dump path to ground
+WSYNC:          .fill 1
+                ; wait for leading edge of horizontal blank
+unk_3:          .fill 1
+CXM0FB:                ; R: D7 = collision M0/PF; D6 = collision M0/BL
+NUSIZ0:                         ; W: number-size player-missile 0
+                .fill 1
+                
+                
+                
+CXM1FB:                ; R: D7 = collision M1/PF; D6 = collision M1/BL
+NUSIZ1:                ; W: number-size player-missile 1
+                .fill 1
+                
+COLUP0:         .fill 1
+                ; colour-lum player 0
+COLUP1:         .fill 1
+                ; colour-lum player 1
+COLUPF:         .fill 1
+                ; colour-lum playfield
+COLUBK:         .fill 1
+                ; colour-lum background
+CTRLPF:         .fill 1
+                ; control playfield ball size & collisions
+                ; D5,D4: ball size: %00 = 1 clock
+                ;                   %01 = 2 clocks
+                ;                   %10 = 4 clocks
+                ;                   %11 = 8 clocks
+                ; D2: PFP: 1 = playfield drawn on top of players
+                ;          0 = players drawn on top of playfield
+                ; D1: SCORE: 1 = left/right halves have player colours
+                ; D0: REF: 1 = reflect playfield
+
+                ; reflect player 0
+                ; D3: 1 = reflect player 0
+INPT3:
+REFP0:
+                .fill 1
+
+                ; reflect player 1
+                ; D3: 1 = reflect player 1
+INPT4:
+REFP1:
+                .fill 1
+
+PF0:            .fill 1
+                ; playfield register byte 0
+PF1:            .fill 1
+                ; playfield register byte 1
+PF2:            .fill 1
+                ; playfield register byte 2
+RESP0:          .fill 1
+RESP1:          .fill 1; reset player 1
+RESM0:          .fill 1
+RESM1:          .fill 1
+RESBL:          .fill 1
+AUDC0:          .fill 1
+                .fill 1
+AUDF0:          .fill 1
+                .fill 1
+AUDV0:          .fill 1
+                .fill 1
+GRP0:           .fill 1
+                ; graphics player 0
+GRP1:           .fill 1
+                ; graphics player 1
+ENAM0:          .fill 1
+                ; graphics (enable) missile 0
+                ; D1: 1 = enable
+                ;     0 = disable
+ENAM1:          .fill 1
+                ; graphics (enable) missile 1
+                ; D1: 1 = enable
+                ;     0 = disable
+ENABL:          .fill 1
+                ; graphics (enable) ball
+                ; D1: 1 = enable
+                ;     0 = disable
+HMP0:           .fill 1
+HMP1:           .fill 1
+HMM0:           .fill 1
+HMM1:           .fill 1
+HMBL:           .fill 1
+                .fill 1
+VDELP1:         .fill 1
+                ; vertical delay player 1
+                .fill 1
+                .fill 1
+                .fill 1
+HMOVE:          .fill 1
+                ; apply horizontal motion
+                .fill 1
+CXCLR:          .fill 1
+                ; clear collision latches
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1
+                .fill 1

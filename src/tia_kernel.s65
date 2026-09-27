@@ -1,0 +1,318 @@
+;-------------------------------------------------------------------------
+; Display kernel and object positioning (2600 only).
+;-------------------------------------------------------------------------
+
+loc_F000:
+                sty scanline_counter; temp storage for Y register
+                lda (enabl_data_ptr),y
+                asl a
+                sta ENABL       ; graphics (enable) ball
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                lda (enam0_data_ptr),y
+                sta ENAM0       ; graphics (enable) missile 0
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                lda (enam1_data_ptr),y
+                sta ENAM1       ; graphics (enable) missile 1
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                lda (p0_sprite_row_selector_ptr),y
+                bpl loc_F057
+                lda (p1_sprite_row_selector_ptr),y
+                bpl loc_F066
+                ldy byte_83
+                lda (grp0_data_ptr),y
+                sta GRP0        ; graphics player 0
+                dey
+                lda (grp0_data_ptr),y
+
+loc_F020:
+                tax
+                lda (grp1_data_ptr),y
+                sta GRP1        ; graphics player 1
+                dey
+                lda (grp1_data_ptr),y
+
+loc_F028:
+                sta byte_81
+                sty byte_83
+                ldy scanline_counter; temp storage for Y register
+
+loc_F02E:
+                lda (pf2_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF2         ; playfield register byte 2
+                lda (pf1_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF1         ; playfield register byte 1
+                lda (pf0_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF0         ; playfield register byte 0
+                stx GRP0        ; graphics player 0
+                ldx unk_FEB5,y
+                lda byte_98,x
+                sta COLUBK      ; colour-lum background
+                lda byte_9C,x
+                sta COLUPF      ; colour-lum playfield
+                lda byte_81
+                sta GRP1        ; graphics player 1
+                dey
+                bne loc_F000
+                jmp loc_F106
+
+;-------------------------------------------------------------------------
+
+loc_F057:
+                lda (p1_sprite_row_selector_ptr),y
+                bpl loc_F079
+                ldy byte_83
+                lda #0
+                sta GRP0        ; graphics player 0
+                dey
+                nop
+                nop
+                bne loc_F020
+
+loc_F066:
+                ldy byte_83
+                lda (grp0_data_ptr),y
+                sta GRP0        ; graphics player 0
+                dey
+                lda (grp0_data_ptr),y
+
+loc_F06F:
+                tax
+                lda #0
+                sta GRP1        ; graphics player 1
+                dey
+                nop
+                nop
+                bne loc_F028
+
+loc_F079:
+                ldy byte_83
+                lda #0
+                sta GRP0        ; graphics player 0
+                dey
+                nop
+                nop
+                jmp loc_F06F
+
+;-------------------------------------------------------------------------
+
+do_display:     .block
+
+                lda #0
+                sta GRP1        ; graphics player 1
+                sta GRP0        ; graphics player 0
+                sta ENAM0       ; graphics (enable) missile 0
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                sta ENAM1       ; graphics (enable) missile 1
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                sta ENABL       ; graphics (enable) ball
+                                ; D1: 1 = enable
+                                ;     0 = disable
+                sta PF0         ; playfield register byte 0
+                sta PF1         ; playfield register byte 1
+                sta PF2         ; playfield register byte 2
+                sta CTRLPF      ; control playfield ball size & collisions
+                                ; D5,D4: ball size: %00 = 1 clock
+                                ;                   %01 = 2 clocks
+                                ;                   %10 = 4 clocks
+                                ;                   %11 = 8 clocks
+                                ; D2: PFP: 1 = playfield drawn on top of players
+                                ;          0 = players drawn on top of playfield
+                                ; D1: SCORE: 1 = left/right halves have player colours
+                                ; D0: REF: 1 = reflect playfield
+                lda byte_87
+                sta COLUBK      ; colour-lum background
+                ldx #4
+                clc
+
+loc_F0A0:
+                lda pf0_data_ptr,x
+                adc #10
+                sta pf0_data_ptr,x
+                dex
+                dex
+                bpl loc_F0A0
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda #0
+                sta VBLANK      ; vertical blank set-clear
+                                ; D7: 1 = start vertical blank
+                                ;     0 = stop vertical blank
+                                ; D6: 1 = enable I4 I5 latches
+                                ;     0 = disable I4 I5 latches
+                                ; D1: 1 = dump I6 I1 I2 I3 ports to ground
+                                ;     0 = remove dump path to ground
+                ldy #4
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                sta WSYNC       ; wait for leading edge of horizontal blank
+
+loc_F0B6:
+                ldx #3
+
+loc_F0B8:
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda pl_colours
+                sta COLUPF      ; colour-lum playfield
+                lda (p0_left_digit_ptr),y
+                eor (p0_right_digit_ptr),y
+                sta PF1         ; playfield register byte 1
+                jsr nullsub_1
+                nop
+                lda pl_colours+1
+                sta COLUPF      ; colour-lum playfield
+                lda (p1_left_digit_ptr),y
+                eor (p1_right_digit_ptr),y
+                sta PF1         ; playfield register byte 1
+                dex
+                bne loc_F0B8
+                dey
+                bpl loc_F0B6
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda #0
+                sta PF1         ; playfield register byte 1
+                tax
+                sta byte_81
+                lda #$31        ; ball = 8 clocks
+                                ; players on top of playfield
+                                ; playfield is reflected
+                sta CTRLPF      ; control playfield ball size & collisions
+                                ; D5,D4: ball size: %00 = 1 clock
+                                ;                   %01 = 2 clocks
+                                ;                   %10 = 4 clocks
+                                ;                   %11 = 8 clocks
+                                ; D2: PFP: 1 = playfield drawn on top of players
+                                ;          0 = players drawn on top of playfield
+                                ; D1: SCORE: 1 = left/right halves have player colours
+                                ; D0: REF: 1 = reflect playfield
+                ldy #147
+                sty byte_83
+                ldy #74
+                sty scanline_counter; temp storage for Y register
+                sta WSYNC           ; wait for leading edge of horizontal blank
+                lda byte_87
+                sta COLUPF      ; colour-lum playfield
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                jsr nullsub_1
+                jsr nullsub_1
+                jsr nullsub_1
+                nop
+                lda byte_87
+                jmp loc_F02E
+                .endblock
+
+;-------------------------------------------------------------------------
+
+loc_F106:
+                ldx #4
+                sec
+                lda #0
+                sta GRP1        ; graphics player 1
+                sta GRP0        ; graphics player 0
+
+loc_F10F:
+                lda pf0_data_ptr,x
+                sbc #10
+                sta pf0_data_ptr,x
+                dex
+                dex
+                bpl loc_F10F
+                ldy #10
+
+loc_F11B:
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda (pf0_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF0         ; playfield register byte 0
+                lda (pf1_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF1         ; playfield register byte 1
+                lda (pf2_data_ptr),y
+                eor pf_eor_value; value EORd with playfield data
+                sta PF2         ; playfield register byte 2
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                dey
+                bpl loc_F11B
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda #2
+                sta VBLANK      ; vertical blank set-clear
+                                ; D7: 1 = start vertical blank
+                                ;     0 = stop vertical blank
+                                ; D6: 1 = enable I4 I5 latches
+                                ;     0 = disable I4 I5 latches
+                                ; D1: 1 = dump I6 I1 I2 I3 ports to ground
+                                ;     0 = remove dump path to ground
+
+;-------------------------------------------------------------------------
+
+nullsub_1:      .block
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+; prepare hpos for object
+; entry: X=object index
+;        A=position
+; exit: _hpos set up
+
+prepare_object_hpos:.block
+                clc
+                adc #5
+                tay
+                and #$F
+                sta pl_hpos,x
+                tya
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                tay
+                clc
+                adc pl_hpos,x
+                cmp #$F
+                bcc loc_F153
+                sbc #$F
+                iny
+
+loc_F153:
+                eor #7
+                asl a
+                asl a
+                asl a
+                asl a
+                sty pl_hpos,x
+                ora pl_hpos,x
+                sta pl_hpos,x
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+apply_object_hmotions:
+                ldx #4
+
+loc_F162:
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                lda pl_hpos,x
+                sta HMP0,x      ; fine-position object in question
+                and #$F         ; extract coarse-position bits
+                tay             ; Y=coarse position count
+
+loc_F16B:
+                dey
+                bpl loc_F16B
+                dex
+                sta RESP0+1,x   ; +1 to offset the DEX
+                bpl loc_F162
+                sta WSYNC       ; wait for leading edge of horizontal blank
+                sta HMOVE       ; apply horizontal motion
+                rts
+
+;-------------------------------------------------------------------------

@@ -1,0 +1,16 @@
+;-------------------------------------------------------------------------
+; Shared constants.
+;-------------------------------------------------------------------------
+
+;-------------------------------------------------------------------------
+
+; enum JoystickDirection
+JoystickDirection_Right:= 0
+JoystickDirection_RightUp:= 1
+JoystickDirection_Up:= 2
+JoystickDirection_LeftUp:= 3
+JoystickDirection_Left:= 4
+JoystickDirection_LeftDown:= 5
+JoystickDirection_Down:= 6
+JoystickDirection_RightDown:= 7
+JoystickDirection_Invalid:= $FF

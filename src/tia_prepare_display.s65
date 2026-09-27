@@ -1,0 +1,215 @@
+;-------------------------------------------------------------------------
+; Per-frame display setup (2600 only).
+;
+; This is half game logic (tongue selection, colour bands) and half TIA
+; setup, so it will need splitting for other platforms.
+;-------------------------------------------------------------------------
+
+prepare_display:.block
+
+                ldx #1          ; X=user index
+
+prepare_scores_loop:
+                txa             ; A=user index
+                asl a           ; A=2*user index
+                asl a           ; A=4*user index
+                tay             ; Y=4*user index
+                lda pl_scores,x
+                and #$F         ; right digit of score
+                sta pl_hpos
+                asl a           ; 2*digit
+                asl a           ; 4*digit (and C=0)
+                adc pl_hpos     ; 5*digit
+                adc #50         ; +50 - right hand digit set
+                sta p0_right_digit_ptr,y
+                lda pl_scores,x
+                and #$F0        ; 16*left digit of score
+                lsr a           ; 8*digit
+                lsr a           ; 4*digit
+                sta pl_hpos
+                lsr a           ; 2*digit
+                lsr a           ; digit
+                adc pl_hpos     ; 5*digit
+                adc #0          ; +0 - left hand digit set
+                sta p0_left_digit_ptr,y
+                dex
+                beq prepare_scores_loop
+                ldx #1          ; X=user index
+
+prepare_players_loop:
+                txa             ; A=user index
+                asl a           ; A=2*player index
+                tay             ; Y=2*player index
+                lda #$FE        ; MSB of sprite row selector table
+                sta p0_sprite_row_selector_ptr+1,y; set ptr MSB
+                lda #<bottom_of_sprite
+                sec
+                sbc pl_ys,x
+                sta p0_sprite_row_selector_ptr,y; set ptr LSB
+                lda #<bottom_of_sprite
+                sbc mi_ys,x     ; as above, but for missile enable
+                sta enam0_data_ptr,y
+                lda byte_DB,x
+                sbc pl_ys,x
+                sbc pl_ys,x
+                sta grp0_data_ptr,y
+                lda pl_flags,x
+                and #8          ; mask out reflect bit
+                sta REFP0,x; reflect the player sprite as required
+                dex
+                beq prepare_players_loop
+                lda COLUP0      ; colour-lum player 0
+                bpl loc_F81A
+                ldx byte_E5
+                inc unk_E6,x
+
+loc_F81A:
+                lda byte_B3
+                and #1
+                tax
+                ldy pl_tongue_counters,x
+                bne loc_F826
+                eor #1
+                tax
+
+loc_F826:
+                asl a
+                tay
+                stx byte_E5
+                lda p0_sprite_row_selector_ptr,y
+                ldy pl_tongue_counters,x
+                beq loc_F850
+                clc
+                adc #2
+                sta enabl_data_ptr
+                lda pl_flags,x
+                and #8
+                bne loc_F844
+                lda pl_xs,x
+                clc
+                adc unk_F796-1,y
+                bcc loc_F84B
+
+loc_F844:
+                lda pl_xs,x
+                sec
+                sbc unk_F796-1,y
+                sec
+
+loc_F84B:
+                adc #1
+                jmp loc_F856
+
+;-------------------------------------------------------------------------
+
+loc_F850:
+                lda #<bottom_of_sprite
+                sta enabl_data_ptr
+                lda #0
+
+loc_F856:
+                pha
+                lda byte_B7
+                asl a
+                asl a
+                tay
+                lda unk_E6,x
+                lsr a
+                ldx #3
+                bcs loc_F87C
+                lda #0
+                sta pf_eor_value; value EORd with playfield data
+
+loc_F867:
+                dey
+                lda unk_F7A2,y
+                sta byte_98,x
+                lda unk_F79E,x
+                sta byte_9C,x
+                dex
+                bpl loc_F867
+                lda byte_98
+                sta byte_87
+                jmp loc_F892
+
+;-------------------------------------------------------------------------
+
+loc_F87C:
+                lda #$FF
+                sta pf_eor_value; value EORd with playfield data
+
+loc_F880:
+                dey
+                lda unk_F7A2,y
+                sta byte_9C,x
+                lda unk_F79E,x
+                sta byte_98,x
+                dex
+                bpl loc_F880
+                lda byte_9C
+                sta byte_87
+
+loc_F892:
+                pla
+                ldx #4
+                bpl loc_F899
+
+loc_F897:
+                lda pl_xs,x
+
+loc_F899:
+                jsr prepare_object_hpos; prepare hpos for object
+                                       ; entry: X=object index
+                                       ;        A=position
+                                       ; exit: _hpos set up
+                dex
+                bpl loc_F897
+                ldx #$FE
+                ldy #$20        ; 4-clock wide missile (NUSIZ D5-D4=%10)
+                                ; one player/missile copy
+                lda byte_B3
+                and #2
+                beq loc_F8C4
+                dec enam0_data_ptr
+                dec enam1_data_ptr
+                ldx #3
+
+loc_F8AF:
+                lda pl_dxs,x
+                bmi loc_F8BB    ; taken if fly moving left
+                lda pl_xs,x
+                clc
+                adc #2
+                jsr prepare_object_hpos; prepare hpos for object
+                                       ; entry: X=object index
+                                       ;        A=position
+                                       ; exit: _hpos set up
+
+loc_F8BB:
+                dex             ; next object
+                cpx #2
+                beq loc_F8AF    ; loop just for m1/m0
+                ldx #$FF
+                ldy #$10        ; 2-clock wide missile (NUSIZ D5-D4=%01)
+                                ; one player/missile copy
+
+loc_F8C4:
+                stx enam0_data_ptr+1
+                stx enam1_data_ptr+1
+                sty NUSIZ0
+                sty NUSIZ1
+                lda byte_B3
+                lsr a
+                bcs loc_F8E1
+                ldx m0_hpos
+                ldy m1_hpos
+                stx m1_hpos
+                sty m0_hpos
+                ldx enam0_data_ptr
+                ldy enam1_data_ptr
+                stx enam1_data_ptr
+                sty enam0_data_ptr
+
+loc_F8E1:
+                jmp apply_object_hmotions
+                .endblock

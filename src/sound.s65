@@ -1,0 +1,395 @@
+;-------------------------------------------------------------------------
+; Sound.
+;-------------------------------------------------------------------------
+
+;-------------------------------------------------------------------------
+
+sub_F914:       .block
+
+                lda ch_sounds,x
+                bne loc_F931
+                .endblock
+
+;-------------------------------------------------------------------------
+
+; Y = sound
+; X = channel
+
+start_sound:    .block
+                sty ch_sounds,x
+                lda audio_counter_by_sound-1,y
+                sta ch_audio_counters,x
+                lda audf_by_sound-1,y; AUDF setting for sound
+                sta AUDF0,x
+                lda audc_and_audv_by_sound-1,y; AUDV/AUDC settings for each sound
+                                              ;  7    4 3    0
+                                              ; +------+------+
+                                              ; | AUDC | AUDV |
+                                              ; +------+------+
+                sta AUDV0,x
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                sta AUDC0,x
+                clc
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+loc_F931:
+                sec
+                rts
+
+;-------------------------------------------------------------------------
+
+update_sounds:  .block
+                ldx #1
+                jsr update_sound_channel; X=channel number, 0 or 1
+                dex
+                .endblock
+
+;-------------------------------------------------------------------------
+
+; X=channel number, 0 or 1
+
+update_sound_channel:.block
+                ldy ch_sounds,x
+                beq locret_F956 ; taken if no sound
+                dec ch_audio_counters,x
+                beq disable_audio_channel; taken if sound finished
+                lda sound_routine_lsbs-1,y; table of LSBs
+                sta sound_routine_temp
+                lda sound_routine_msbs-1,y; table of MSBs
+                sta sound_routine_temp+1
+                lda ch_audio_counters,x
+                jmp (sound_routine_temp)
+
+;-------------------------------------------------------------------------
+
+disable_audio_channel:
+                lda #0
+                sta ch_sounds,x
+                sta AUDV0,x
+
+locret_F956:
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+sound1:
+                and #1
+                beq loc_F960
+                lda #0
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F960:
+                lda ch_audio_counters,x
+                lsr a
+                lsr a
+                adc #3
+                sta AUDF0,x
+                lda #$C
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound2:
+                cmp #2
+                bcc loc_F981
+                lsr a
+                clc
+                adc #2
+                sta AUDF0,x
+                lsr a
+                lsr a
+                eor #7
+                sec
+                sbc #2
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F981:
+                lda #31
+                sta AUDF0,x
+                lda #8
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound3:
+                cmp #56
+                bcc loc_F999
+                asl a
+                asl a
+                eor #$FF
+                adc #$EF
+                sta AUDV0,x
+                jmp loc_F9A1
+
+;-------------------------------------------------------------------------
+
+loc_F999:
+                cmp #40
+                bcc loc_F9A9
+                sbc #40
+                sta AUDV0,x
+
+loc_F9A1:
+                lda #60
+                sec
+                sbc ch_audio_counters,x
+                sta AUDF0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F9A9:
+                cmp #$14
+                bcc loc_F9BD
+                lsr a
+                lsr a
+                eor #$FF
+                adc #$A
+                sta AUDV0,x
+                lda ch_audio_counters,x
+                sec
+                sbc #$12
+                sta AUDF0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_F9BD:
+                lsr a
+                lsr a
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound4:
+                lsr a
+                eor #$FF
+                bcs loc_F9C9
+                adc #4
+
+loc_F9C9:
+                adc #18
+                clc
+                adc unk_EC,x
+                sta AUDF0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound5:
+                cmp #$10
+                bcs locret_F9E7
+                cmp #4
+                bcc loc_F9DE
+                adc #3
+                jmp loc_F9E2
+
+;-------------------------------------------------------------------------
+
+loc_F9DE:
+                eor #$FF
+                adc #$C
+
+loc_F9E2:
+                clc
+                adc unk_EC,x
+                sta AUDF0,x
+
+locret_F9E7:
+                rts
+
+;-------------------------------------------------------------------------
+
+sound6:
+                cmp #1
+                beq loc_FA0E
+                cmp #80
+                bcc loc_F9F2
+                sbc #80
+
+loc_F9F2:
+                cmp #50
+                bcs loc_F9FC
+                sta sound_routine_temp
+                and #1
+                beq loc_FA01
+
+loc_F9FC:
+                lda #0
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_FA01:
+                lda sound_routine_temp
+                lsr a
+                lsr a
+                adc #2
+                sta AUDF0,x
+                lda #$C
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_FA0E:
+                ldy #7
+                ldx #1
+                jsr start_sound ; Y = sound
+                                ; X = channel
+                dex
+                jsr start_sound ; Y = sound
+                                ; X = channel
+                inx
+                rts
+
+;-------------------------------------------------------------------------
+
+sound7:
+                cmp #1
+                bne loc_FA2C
+                jsr rnd
+                eor byte_B3
+                and #$F
+                adc #130
+                sta ch_audio_counters
+                sta ch_audio_counters+1
+
+loc_FA2C:
+                cmp #32
+                bcs loc_FA42
+                cmp #$10
+                bcc loc_FA36
+                eor #$1F
+
+loc_FA36:
+                lsr a
+                php
+                lsr a
+                sta AUDV0,x
+                plp
+                txa
+                adc #10
+                sta AUDF0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+loc_FA42:
+                lda #0
+
+loc_FA44:
+                sta AUDV0,x
+                rts
+
+;-------------------------------------------------------------------------
+
+sound_routines=[sound1,sound2,sound3,sound4,sound5,sound6,sound7]
+                
+sound_routine_lsbs:.byte <sound_routines
+sound_routine_msbs:.byte >sound_routines
+                
+; AUDV/AUDC settings for each sound
+;  7    4 3    0
+; +------+------+
+; | AUDC | AUDV |
+; +------+------+
+audc_and_audv_by_sound:
+                .byte $60
+                .byte $81
+                .byte $80
+                .byte $43
+                .byte $43
+                .byte $60
+                .byte $40
+                
+                ; AUDF setting for sound
+audf_by_sound:
+                .byte 0
+                .byte $A
+                .byte 0
+                .byte $1A
+                .byte $14
+                .byte 0
+                .byte $A
+audio_counter_by_sound:
+                .byte 23
+                .byte 20
+                .byte 60
+                .byte 18
+                .byte 18
+                .byte 130
+                .byte 80
+
+;-------------------------------------------------------------------------
+
+sub_FA6A:       .block
+                tya
+                pha
+                ldy #1
+                jsr start_sound ; Y = sound
+                                ; X = channel
+                pla
+                tay
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+play_tongue_sound:.block
+                tya
+                pha
+                ldy #2
+                jsr start_sound ; Y = sound
+                                ; X = channel
+                pla
+                tay
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+sub_FA7E:       .block
+                lda byte_B3
+                and #1
+                tax
+                jsr rnd
+                eor byte_B3
+                and #$F9
+                bne locret_FAA6
+                jsr rnd
+                lsr a
+                and #3
+                sta unk_EC,x
+                ldy #4
+                bcs loc_FA99
+                iny
+
+loc_FA99:
+                jsr sub_F914
+                bcs locret_FAA6
+                lda audf_by_sound-1,y; AUDF setting for sound
+                clc
+                adc unk_EC,x
+                sta AUDF0,x
+
+locret_FAA6:
+                rts
+                .endblock
