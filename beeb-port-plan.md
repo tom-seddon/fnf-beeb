@@ -466,3 +466,23 @@ Decided on 2026-09-28:
 
 To revisit once the game is running:
 - Fly colour.
+
+---
+
+## 8. Status
+
+| Milestone | Status |
+|---|---|
+| 0. Refactor, 2600 still byte-exact | done (3dec04f) |
+| 1. Beeb skeleton | next |
+| 2. Logic transplant + frogs | |
+| 3. Flies, tongue, collision, score | |
+| 4. The rest of the game | |
+
+Tooling:
+- Planned for milestone 1: a `make run` target that resets b2 and
+  runs the `.ssd` through its HTTP API, and a script that peeks screen
+  memory and turns it into a PNG.
+- Possible for milestone 2: py65 (`pip3 install --user py65`) for
+  headless frame-by-frame RAM comparison of the 2600 logic against the
+  BBC build.
