@@ -480,7 +480,7 @@ To revisit once the game is running:
 | Milestone | Status |
 |---|---|
 | 0. Refactor, 2600 still byte-exact | done (3dec04f) |
-| 1. Beeb skeleton | done, pending a by-eye check against Stella |
+| 1. Beeb skeleton | done (d747ef5, checked against Stella) |
 | 2. Logic transplant + frogs | next |
 | 3. Flies, tongue, collision, score | |
 | 4. The rest of the game | |
