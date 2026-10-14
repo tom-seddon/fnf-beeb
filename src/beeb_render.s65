@@ -161,6 +161,11 @@ draw_background:.block
 ;-------------------------------------------------------------------------
 
 draw_scores:.block
+                lda pl_scores+0
+                sta drawn_scores+0
+                lda pl_scores+1
+                sta drawn_scores+1
+
                 ; Find each digit's data, as an offset from
                 ; left_digits_pf_data, same as prepare_display: left
                 ; digits at 5*digit, right digits at 50+5*digit.

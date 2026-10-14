@@ -1,0 +1,431 @@
+;-------------------------------------------------------------------------
+; Sprites (BBC only).
+;
+; The 2600 sprite data is drawn as is: 8 pixels a row, 1 bpp, bit 7
+; leftmost unless reflected. Each sprite saves what's under it, and
+; is restored before anything is drawn the next frame.
+;
+; Frog geometry, matching Stella: frog i is visible on kernel lines
+; pl_ys[i]-9 .. pl_ys[i]-1 (and only kernel lines 1-74). On the BBC,
+; sprite row k (0-17) is on screen line 171-2*pl_ys[i]+k, and its
+; GRP byte is at grp_data+byte_DB[i]-2-k. Screen X is pl_xs[i]+1.
+;-------------------------------------------------------------------------
+
+num_sprites=2                   ; frog 0, frog 1
+sprite_max_rows=18
+sprite_max_cols=5               ; 8 pixels at an odd X span 5 bytes
+sprite_save_size=sprite_max_rows*sprite_max_cols
+
+; Screen lines the kernel draws sprites on (kernel lines 74..1).
+sprite_first_line=pf_line
+sprite_last_line=pf_line+(pf_top_row-10)*pf_row_lines-1
+
+;-------------------------------------------------------------------------
+
+init_sprites:.block
+                lda #0
+                ldx #num_sprites-1
+-
+                sta saved_rows,x
+                dex
+                bpl -
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Restore what's under the sprites, then draw them again from the
+; current game state. Also redraw the scores if they've changed.
+;-------------------------------------------------------------------------
+
+render_frame:.block
+                ; Restore in the reverse of the drawing order.
+                ldx #0
+                jsr restore_sprite
+                ldx #1
+                jsr restore_sprite
+
+                ; Draw lowest priority first: P1, then P0 on top.
+                ldx #1
+                jsr draw_frog
+                ldx #0
+                jsr draw_frog
+
+                lda pl_scores+0
+                cmp drawn_scores+0
+                bne +
+                lda pl_scores+1
+                cmp drawn_scores+1
+                beq ++
++
+                jsr draw_scores
++
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Entry: X = frog (0 or 1)
+;-------------------------------------------------------------------------
+
+draw_frog:.block
+                stx sprite_index
+                lda #0
+                sta saved_rows,x
+
+                ; Vertical position.
+                lda pl_ys,x
+                cmp #2
+                bcc done        ; below kernel line 1
+                cmp #84
+                bcs done        ; above kernel line 74
+                asl a
+                eor #$ff
+                sec
+                adc #171        ; A=171-2*pl_y = line of row 0
+                sta sprite_line
+
+                ; Data address of row 0, as an offset into grp_data.
+                lda byte_DB,x
+                sec
+                sbc #2
+                sta sprite_data_offset
+
+                ; Clip the top.
+                lda sprite_line
+                cmp #sprite_first_line
+                bcs +
+                lda #sprite_first_line
+                sec
+                sbc sprite_line ; A=rows to skip
+                tay
+                clc
+                adc sprite_line
+                sta sprite_line
+                tya
+                eor #$ff
+                sec
+                adc sprite_data_offset
+                sta sprite_data_offset
+                tya
+                eor #$ff
+                sec
+                adc #sprite_max_rows
+                bne ++          ; always taken
++
+                lda #sprite_max_rows
++
+                sta sprite_rows
+
+                ; Clip the bottom.
+                lda #sprite_last_line+1
+                sec
+                sbc sprite_line ; A=lines available
+                cmp sprite_rows
+                bcs +
+                sta sprite_rows
++
+
+                ; Horizontal position. The TIA wraps at 160.
+                lda pl_xs,x
+                clc
+                adc #1
+                cmp #160
+                bcc +
+                sbc #160
++
+                sta sprite_x
+                ldy #role_frog0
+                cpx #0
+                beq +
+                ldy #role_frog1
++
+                lda pl_flags,x  ; reflected if bit 3 set
+                tax
+                lda sprite_x
+                jsr draw_sprite
+done:
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Draw a sprite, saving what's underneath.
+;
+; Each screen byte is ((screen^colour)&mask)^colour, where the mask
+; keeps the screen pixels the sprite leaves clear. The masks come from
+; sprite_masks, indexed by GRP byte. The column code is unrolled, last
+; column first, and entered according to how many columns there are -
+; 4 or 5, or fewer at the right edge.
+;
+; Entry: A = X position (0-159); Y = colour role; X = flags (bit 3 set
+;        if reflected); sprite_index, sprite_line, sprite_rows,
+;        sprite_data_offset set up
+;-------------------------------------------------------------------------
+
+draw_sprite:.block
+                sta sprite_x
+                txa
+                and #8
+                sta sprite_reflect
+                lda solid_bytes,y
+                sta sprite_colour
+
+                ; Skip blank rows at the top...
+-
+                ldy sprite_data_offset
+                lda grp_data,y
+                bne +
+                inc sprite_line
+                dec sprite_data_offset
+                dec sprite_rows
+                bne -
+                beq record      ; nothing to draw
++
+                ; ...and the bottom.
+-
+                lda sprite_data_offset
+                sec
+                sbc sprite_rows ; A=offset of last row-1
+                tay
+                lda grp_data+1,y
+                bne +
+                dec sprite_rows
+                bne -           ; (not taken: there's a non-blank row)
++
+
+                ; Byte column and width.
+                lda sprite_x
+                lsr a
+                sta sprite_col
+                lda #4
+                adc #0          ; +1 if odd X
+                sta sprite_cols
+                lda #80
+                sec
+                sbc sprite_col  ; columns to the right edge
+                cmp sprite_cols
+                bcs +
+                sta sprite_cols
++
+
+                ; Column offset in bytes (col*8).
+                lda #0
+                sta sprite_col_offset+1
+                lda sprite_col
+                asl a
+                asl a
+                asl a
+                rol sprite_col_offset+1
+                sta sprite_col_offset+0
+
+                ; Entry point into the unrolled column code.
+                ldy sprite_cols
+                lda draw_cols_entries_lo-1,y
+                sta sprite_entry+0
+                lda draw_cols_entries_hi-1,y
+                sta sprite_entry+1
+
+record:
+                ; Record what's being saved.
+                ldx sprite_index
+                lda sprite_line
+                sta saved_lines,x
+                lda sprite_col_offset+0
+                sta saved_col_offsets_lo,x
+                lda sprite_col_offset+1
+                sta saved_col_offsets_hi,x
+                lda sprite_cols
+                sta saved_cols,x
+                lda sprite_rows
+                sta saved_rows,x
+                bne +
+                rts
++
+                ; X = save buffer index.
+                lda save_buffer_offsets,x
+                tax
+
+row_loop:
+                ; Screen address of this row.
+                ldy sprite_line
+                lda line_addrs_lo,y
+                clc
+                adc sprite_col_offset+0
+                sta ptr+0
+                lda line_addrs_hi,y
+                adc sprite_col_offset+1
+                sta ptr+1
+
+                ; Masks for each column.
+                ldy sprite_data_offset
+                lda grp_data,y
+                ldy sprite_reflect
+                beq +
+                tay
+                lda bit_reverse,y
++
+                tay
+                lda sprite_x
+                lsr a
+                bcs odd
+                lda sprite_masks_0,y
+                sta sprite_col_masks+0
+                lda sprite_masks_1,y
+                sta sprite_col_masks+1
+                lda sprite_masks_2,y
+                sta sprite_col_masks+2
+                lda sprite_masks_3,y
+                sta sprite_col_masks+3
+                jmp (sprite_entry)
+odd:
+                ; Shifted right a pixel: column 0 is bit 7 as a right
+                ; hand pixel, columns 1-4 are the rest shifted left.
+                tya
+                asl a
+                tay
+                lda #0
+                rol a
+                sta sprite_col_masks+0 ; (temp)
+                lda sprite_masks_0,y
+                sta sprite_col_masks+1
+                lda sprite_masks_1,y
+                sta sprite_col_masks+2
+                lda sprite_masks_2,y
+                sta sprite_col_masks+3
+                lda sprite_masks_3,y
+                sta sprite_col_masks+4
+                ldy sprite_col_masks+0
+                lda sprite_masks_3,y
+                sta sprite_col_masks+0
+                jmp (sprite_entry)
+
+draw_col_entry_4:
+                ldy #32
+                lda (ptr),y
+                sta save_buffers+4,x
+                eor sprite_colour
+                and sprite_col_masks+4
+                eor sprite_colour
+                sta (ptr),y
+draw_col_entry_3:
+                ldy #24
+                lda (ptr),y
+                sta save_buffers+3,x
+                eor sprite_colour
+                and sprite_col_masks+3
+                eor sprite_colour
+                sta (ptr),y
+draw_col_entry_2:
+                ldy #16
+                lda (ptr),y
+                sta save_buffers+2,x
+                eor sprite_colour
+                and sprite_col_masks+2
+                eor sprite_colour
+                sta (ptr),y
+draw_col_entry_1:
+                ldy #8
+                lda (ptr),y
+                sta save_buffers+1,x
+                eor sprite_colour
+                and sprite_col_masks+1
+                eor sprite_colour
+                sta (ptr),y
+draw_col_entry_0:
+                ldy #0
+                lda (ptr),y
+                sta save_buffers+0,x
+                eor sprite_colour
+                and sprite_col_masks+0
+                eor sprite_colour
+                sta (ptr),y
+
+                txa
+                clc
+                adc #sprite_max_cols
+                tax
+                inc sprite_line
+                dec sprite_data_offset
+                dec sprite_rows
+                beq +
+                jmp row_loop
++
+                rts
+                .endblock
+
+draw_cols_entries:=[draw_sprite.draw_col_entry_0,draw_sprite.draw_col_entry_1,draw_sprite.draw_col_entry_2,draw_sprite.draw_col_entry_3,draw_sprite.draw_col_entry_4]
+draw_cols_entries_lo:.byte <draw_cols_entries
+draw_cols_entries_hi:.byte >draw_cols_entries
+
+;-------------------------------------------------------------------------
+; Entry: X = sprite index
+;-------------------------------------------------------------------------
+
+restore_sprite:.block
+                lda saved_rows,x
+                bne +
+                rts
++
+                sta sprite_rows
+                lda saved_lines,x
+                sta sprite_line
+                lda saved_col_offsets_lo,x
+                sta sprite_col_offset+0
+                lda saved_col_offsets_hi,x
+                sta sprite_col_offset+1
+                ldy saved_cols,x
+                lda restore_cols_entries_lo-1,y
+                sta sprite_entry+0
+                lda restore_cols_entries_hi-1,y
+                sta sprite_entry+1
+                lda save_buffer_offsets,x
+                tax
+
+row_loop:
+                ldy sprite_line
+                lda line_addrs_lo,y
+                clc
+                adc sprite_col_offset+0
+                sta ptr+0
+                lda line_addrs_hi,y
+                adc sprite_col_offset+1
+                sta ptr+1
+                jmp (sprite_entry)
+
+restore_col_entry_4:
+                ldy #32
+                lda save_buffers+4,x
+                sta (ptr),y
+restore_col_entry_3:
+                ldy #24
+                lda save_buffers+3,x
+                sta (ptr),y
+restore_col_entry_2:
+                ldy #16
+                lda save_buffers+2,x
+                sta (ptr),y
+restore_col_entry_1:
+                ldy #8
+                lda save_buffers+1,x
+                sta (ptr),y
+restore_col_entry_0:
+                ldy #0
+                lda save_buffers+0,x
+                sta (ptr),y
+
+                txa
+                clc
+                adc #sprite_max_cols
+                tax
+                inc sprite_line
+                dec sprite_rows
+                bne row_loop
+                rts
+                .endblock
+
+restore_cols_entries:=[restore_sprite.restore_col_entry_0,restore_sprite.restore_col_entry_1,restore_sprite.restore_col_entry_2,restore_sprite.restore_col_entry_3,restore_sprite.restore_col_entry_4]
+restore_cols_entries_lo:.byte <restore_cols_entries
+restore_cols_entries_hi:.byte >restore_cols_entries
+
+save_buffer_offsets:
+                .for i_=0,i_<num_sprites,i_+=1
+                .byte i_*sprite_save_size
+                .next

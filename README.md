@@ -45,6 +45,17 @@ The BBC version builds to `build/fnf-beeb.ssd`, and to `beeb/Z` for
 use with BeebLink. Type `make run` to run it in b2, and `make
 screenshot` to save its screen to `build/beeb-screen.png`.
 
+# BBC keys
+
+| | Up | Down | Left | Right | Fire |
+|---|---|---|---|---|---|
+| Left frog | W | S | A | D | Tab |
+| Right frog | ↑ | ↓ | ← | → | Return |
+
+f0 resets the game. f1 and f2 toggle the left and right players'
+difficulty (amateur/pro), like the 2600's difficulty switches.
+A frog left idle is taken over by the computer.
+
 # source layout
 
 * `fnf-2600.s65` - top level for the 2600 build

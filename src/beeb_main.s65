@@ -3,6 +3,27 @@
 ;-------------------------------------------------------------------------
 
 main:
+                lda #229        ; disable Escape
+                ldx #1
+                ldy #0
+                jsr osbyte
+                lda #11         ; disable auto repeat
+                ldx #0
+                jsr osbyte
+
+                jsr init_crtc
+                jsr init_input
+                jsr init_render_timer
+
+; Start (or restart) the game. Like the 2600's main.
+game_start:
+                ; Wait for the reset key to be released.
+-
+                jsr scan_keyboard
+                lda SWCHB
+                lsr a
+                bcc -
+
                 ; Clear the game's zero page. (Unlike the 2600, leave
                 ; the rest alone: the OS is still running.)
                 lda #0
@@ -13,25 +34,99 @@ main:
                 cpx #$ff
                 bne -
 
-                lda #229        ; disable Escape
-                ldx #1
-                ldy #0
-                jsr osbyte
-
-                jsr init_crtc
+                lda system_via.t1c_l
+                sta random_seed
+                jsr handle_players_inputs
                 jsr initialise_memory
+
                 jsr init_palette
                 jsr prepare_colours
                 jsr update_palette
+                jsr init_sprites
                 jsr draw_background
                 jsr draw_scores
 
+; Same order as the 2600 main loop. Sprites are erased and redrawn in
+; place, so to avoid the beam catching a sprite half drawn (or not
+; drawn at all), render_frame runs once the beam has left the bottom
+; of the picture. The vsync event starts User VIA T1 to time out
+; then.
 main_loop:
-                lda #19         ; wait for vsync
-                jsr osbyte
-                jsr prepare_colours
+                lda #$40
+-
+                bit user_via.ifr
+                beq -
+                lda user_via.t1c_l ; acknowledge
+                sta render_start_time+0
+                lda user_via.t1c_h
+                sta render_start_time+1
+
                 jsr update_palette
+                jsr render_frame
+
+                ; Record how long that took, in us.
+                sec
+                lda render_start_time+0
+                sbc user_via.t1c_l
+                sta render_time+0
+                lda render_start_time+1
+                sbc user_via.t1c_h
+                sta render_time+1
+
+                jsr scan_keyboard
+                lda SWCHB
+                lsr a           ; C=0 if reset pressed
+                bcs +
+                jmp game_start
++
+                jsr sub_F6BE    ; TODO: software collision (milestone 3)
+                jsr prepare_colours
+                inc byte_B3
+                jsr handle_players_inputs
+                jsr update_player_physics
+                jsr update_player_logic
+                jsr update_tongues
+                jsr sub_F5FD
+                jsr sub_F8F0
+                jsr sub_FA7E
+                jsr update_sounds
                 jmp main_loop
+
+; Time from vsync to the end of the picture, in us. Vsync is at
+; character row 32 of 39 (CRTC R7, R4), i.e. scanline 256 of 312; the
+; picture ends at scanline 192 of the next frame. 64us per scanline.
+render_delay=(312-256+screen_line_count)*64
+
+evntv=$220
+
+init_render_timer:.block
+                lda #$40        ; no T1 interrupts
+                sta user_via.ier
+                lda user_via.acr
+                and #$3f        ; T1 one-shot, no PB7 output
+                sta user_via.acr
+
+                sei
+                lda #<vsync_event
+                sta evntv+0
+                lda #>vsync_event
+                sta evntv+1
+                cli
+                lda #14         ; enable vsync event
+                ldx #4
+                jmp osbyte
+                .endblock
+
+; Vsync event handler: start the timer. Must preserve A, X, Y.
+vsync_event:.block
+                pha
+                lda #<render_delay
+                sta user_via.t1c_l
+                lda #>render_delay
+                sta user_via.t1c_h
+                pla
+                rts
+                .endblock
 
 ;-------------------------------------------------------------------------
 ; Set up the CRTC for the 160x192 screen at &4400. Assumes MODE 2 has

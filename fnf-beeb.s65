@@ -41,6 +41,10 @@ tongue_colour:  .fill 1
 ptr:            .fill 2
 ptr2:           .fill 2
 
+; Sprite drawing.
+sprite_colour:  .fill 1
+sprite_col_masks:.fill 5
+
 zp_end:
                 .cerror *>$90,"zero page overflow"
                 .endv
@@ -54,6 +58,8 @@ sprite_row_selector_table=0
 * = $1900
                 .include "src/beeb_main.s65"
                 .include "src/beeb_render.s65"
+                .include "src/beeb_sprites.s65"
+                .include "src/beeb_input.s65"
                 .include "src/beeb_tables.s65"
 
 ;-------------------------------------------------------------------------

@@ -57,4 +57,38 @@ role_sources:
 
 ;-------------------------------------------------------------------------
 
+; Each byte with its bits in reverse order, for reflected sprites.
+bit_reverse:
+                .for i_=0,i_<256,i_+=1
+                .byte (i_&1)<<7|(i_&2)<<5|(i_&4)<<3|(i_&8)<<1|(i_&16)>>1|(i_&32)>>3|(i_&64)>>5|(i_&128)>>7
+                .next
+
+;-------------------------------------------------------------------------
+
+; Sprite masks: for each GRP byte, the screen bits to keep in each of
+; the 4 byte columns of an 8-pixel sprite at an even X (column j is
+; pixels from bits 7-2j and 6-2j). Left pixel is bits 7,5,3,1; right
+; is 6,4,2,0.
+sprite_pair_mask .function pair_
+                .endf pair_==0?$ff:(pair_==1?$aa:(pair_==2?$55:$00))
+                .align 256
+sprite_masks_0:
+                .for i_=0,i_<256,i_+=1
+                .byte sprite_pair_mask((i_>>6)&3)
+                .next
+sprite_masks_1:
+                .for i_=0,i_<256,i_+=1
+                .byte sprite_pair_mask((i_>>4)&3)
+                .next
+sprite_masks_2:
+                .for i_=0,i_<256,i_+=1
+                .byte sprite_pair_mask((i_>>2)&3)
+                .next
+sprite_masks_3:
+                .for i_=0,i_<256,i_+=1
+                .byte sprite_pair_mask((i_>>0)&3)
+                .next
+
+;-------------------------------------------------------------------------
+
                 .include "tia_to_beeb.s65"

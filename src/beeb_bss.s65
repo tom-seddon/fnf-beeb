@@ -16,3 +16,35 @@ bg_byte:        .fill 1
 pf_bits:        .fill 1
 draw_line_x:    .fill 1
 digit_offsets:  .fill 4         ; p0 left, p0 right, p1 left, p1 right
+
+; Input.
+difficulty_keys:.fill 1         ; bit 0 = f1 down, bit 1 = f2 down
+keys_temp:      .fill 1
+inkey_y:        .fill 1
+
+; Scores currently on screen.
+drawn_scores:   .fill 2
+
+; Sprite save-under: what each sprite saved, and where from.
+saved_rows:     .fill num_sprites   ; 0 = nothing saved
+saved_lines:    .fill num_sprites
+saved_cols:     .fill num_sprites
+saved_col_offsets_lo:.fill num_sprites
+saved_col_offsets_hi:.fill num_sprites
+save_buffers:   .fill num_sprites*sprite_save_size
+
+; Sprite drawing temps.
+sprite_index:   .fill 1
+sprite_line:    .fill 1
+sprite_rows:    .fill 1
+sprite_data_offset:.fill 1
+sprite_x:       .fill 1
+sprite_reflect: .fill 1
+sprite_col:     .fill 1
+sprite_cols:    .fill 1
+sprite_col_offset:.fill 2
+sprite_entry:   .fill 2
+
+; Time taken by the last update_palette+render_frame, in us.
+render_time:    .fill 2
+render_start_time:.fill 2

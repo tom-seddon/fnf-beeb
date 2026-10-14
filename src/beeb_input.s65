@@ -1,0 +1,129 @@
+;-------------------------------------------------------------------------
+; Keyboard input (BBC only).
+;
+; Builds the 2600 input register images directly, so the shared code
+; reads them unchanged:
+;
+;   SWCHA  bits 7-4 = P0 ~R ~L ~D ~U, bits 3-0 = P1 ~R ~L ~D ~U
+;   INPT4  bit 7 = ~P0 fire;  INPT5 bit 7 = ~P1 fire
+;   SWCHB  bit 0 = ~reset, bit 6 = P0 pro, bit 7 = P1 pro
+;
+; (0 = pressed throughout, as on the 2600.)
+;-------------------------------------------------------------------------
+
+; Negative INKEY codes, as bytes.
+inkey_a=$100-66
+inkey_d=$100-51
+inkey_s=$100-82
+inkey_w=$100-34
+inkey_tab=$100-97
+inkey_right=$100-122
+inkey_left=$100-26
+inkey_down=$100-42
+inkey_up=$100-58
+inkey_return=$100-74
+inkey_f0=$100-33
+inkey_f1=$100-114
+inkey_f2=$100-115
+
+; Keys making up SWCHA, from bit 7 down to bit 0.
+swcha_keys:
+                .byte inkey_d,inkey_a,inkey_s,inkey_w
+                .byte inkey_right,inkey_left,inkey_down,inkey_up
+swcha_keys_end:
+
+;-------------------------------------------------------------------------
+
+init_input:.block
+                ; Console switches: not reset, not select, colour,
+                ; both players amateur.
+                lda #%00001011
+                sta SWCHB
+                lda #0
+                sta difficulty_keys
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+scan_keyboard:.block
+                ; Joysticks.
+                ldy #0
+-
+                lda swcha_keys,y
+                jsr read_key
+                rol SWCHA       ; C=0 if pressed
+                iny
+                cpy #swcha_keys_end-swcha_keys
+                bne -
+
+                ; Fire buttons.
+                lda #inkey_tab
+                jsr read_key
+                ror INPT4
+                lda #inkey_return
+                jsr read_key
+                ror INPT5
+
+                ; Reset.
+                lda #inkey_f0
+                jsr read_key
+                lda SWCHB
+                and #$fe
+                adc #0          ; bit 0 = C = ~reset
+                sta SWCHB
+
+                ; Difficulty switches toggle on each press of f1/f2.
+                lda #inkey_f2
+                jsr read_key
+                rol keys_temp
+                lda #inkey_f1
+                jsr read_key
+                lda keys_temp
+                rol a           ; bit 1 = ~f2, bit 0 = ~f1
+                eor #3          ; bit 1 = f2, bit 0 = f1
+                and #3
+                sta keys_temp
+                eor difficulty_keys ; bits set if changed...
+                and keys_temp       ; ...and now pressed
+                ldx keys_temp
+                stx difficulty_keys
+                lsr a           ; C=f1 newly pressed
+                bcc +
+                pha
+                lda SWCHB
+                eor #$40        ; P0 difficulty
+                sta SWCHB
+                pla
++
+                lsr a           ; C=f2 newly pressed
+                bcc +
+                lda SWCHB
+                eor #$80        ; P1 difficulty
+                sta SWCHB
++
+
+                ; Stop the keyboard buffer filling up.
+                lda #21
+                ldx #0
+                jmp osbyte
+                .endblock
+
+;-------------------------------------------------------------------------
+; Read a key.
+;
+; Entry: A = negative INKEY code
+; Exit: C=0 if pressed, C=1 if not; Y preserved
+;-------------------------------------------------------------------------
+
+read_key:.block
+                sty inkey_y
+                tax
+                ldy #$ff
+                lda #$81
+                jsr osbyte      ; X=$ff if pressed, else 0
+                inx             ; X=0 if pressed
+                cpx #1          ; C=0 if pressed
+                ldy inkey_y
+                rts
+                .endblock

@@ -481,7 +481,7 @@ To revisit once the game is running:
 |---|---|
 | 0. Refactor, 2600 still byte-exact | done (3dec04f) |
 | 1. Beeb skeleton | done (d747ef5, checked against Stella) |
-| 2. Logic transplant + frogs | next |
+| 2. Logic transplant + frogs | in progress: needs a keyboard play test |
 | 3. Flies, tongue, collision, score | |
 | 4. The rest of the game | |
 
@@ -513,8 +513,37 @@ Milestone 1 notes:
   show it. This accounts for all but 8 of the 322 pixels that differ
   from Stella. The BBC doesn't copy this (see Decisions).
 - `prepare_colours` (`src/beeb_main.s65`) duplicates the colour half
-  of `prepare_display`. Share it when `prepare_display` is split in
-  milestone 2.
+  of `prepare_display`. Share it when `prepare_display` is split
+  (milestone 3, with the tongue).
+
+Milestone 2 notes:
+- The shared logic runs every frame in the 2600's order, at 50Hz.
+  `sub_F6BE` is still called, but the collision shadows are always 0
+  until milestone 3.
+- Frog geometry, checked pixel for pixel against Stella: frog i is on
+  kernel lines `pl_y-9..pl_y-1` (only lines 1-74 are drawn). On the
+  BBC, sprite row k (0-17) is screen line `171-2*pl_y+k`, with GRP
+  byte `grp_data+byte_DB-2-k`. Every frame (sitting, jump, splash)
+  has its top row at k=0. Screen X is `pl_x+1`, so the X offset C=1.
+- Sprites use save-under, restored in reverse order. Blank rows at the
+  top and bottom of a frame are skipped, the column code is unrolled,
+  and the masks come from tables (`sprite_masks_0..3`).
+- Timing: the OS vsync event starts User VIA T1 (one-shot) to time out
+  as the beam leaves the bottom of the picture (line 192). The main
+  loop renders then (about 5-7ms with two frogs, inside the ~7.7ms
+  before the picture starts again), then runs the game logic.
+  `render_time` holds the last render time in us. Things that didn't
+  work: rendering straight after `*FX19` (a frog near the top of a
+  jump was erased before the beam reached it and redrawn after, so it
+  never appeared); waiting for line 192 after `*FX19` (rendering ran
+  past the next vsync, halving the frame rate); a free-running T1 synced
+  once at startup (frogs were sometimes caught half drawn, presumably
+  as it drifted).
+- CPU jumps (state 7) always land on a pad. Only a player's jump
+  (state 2) can splash. Splash (states 3-5) checked by poking a frog
+  into a player jump over the water.
+- b2's `screenshot` lags RAM by a few frames, so compare screenshots
+  with RAM only when the game state is steady.
 
 Tooling:
 - `make run` builds and runs the `.ssd` in b2. `make screenshot`
