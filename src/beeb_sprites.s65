@@ -211,7 +211,9 @@ draw_sprite:.block
                 sta sprite_col_offset+1
                 lda sprite_col
                 asl a
+                rol sprite_col_offset+1
                 asl a
+                rol sprite_col_offset+1
                 asl a
                 rol sprite_col_offset+1
                 sta sprite_col_offset+0
