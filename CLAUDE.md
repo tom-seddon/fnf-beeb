@@ -14,8 +14,8 @@
   "%{http_code}" http://localhost:48075/`; `000` means it isn't
   running, so ask). Useful endpoints (see b2's `doc/Debug-version.md`):
   `reset/b2?config=...`, `run/b2?name=X.ssd` (upload the .ssd as the
-  body), `peek/b2/BEGIN/END`, `poke/b2/ADDR`. There is no screenshot
-  endpoint. To see the screen, peek the screen memory and convert it to
-  a PNG.
+  body), `peek/b2/BEGIN/END`, `poke/b2/ADDR`, and `screenshot/b2`
+  (returns a PNG of the display; `make screenshot` saves it to
+  `build/beeb-screen.png`).
 - Target: BBC Model B with DFS, OS kept running, 160x192 MODE 2 screen
   at &4400.

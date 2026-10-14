@@ -55,10 +55,10 @@ beeb: _folders
 run: beeb
 	$(_V)curl --fail-with-body --silent --show-error -H "Content-Type:application/binary" --upload-file "$(BEEB_SSD)" "http://localhost:48075/run/b2?name=fnf-beeb.ssd"
 
-# Grab the BBC screen from b2 as a PNG.
+# Grab b2's screen as a PNG.
 .PHONY:screenshot
 screenshot: _folders
-	$(_V)$(PYTHON) ./tools/b2_screenshot.py "$(BUILD)/beeb-screen.png"
+	$(_V)curl --fail-with-body --silent --show-error -o "$(BUILD)/beeb-screen.png" "http://localhost:48075/screenshot/b2"
 
 .PHONY:_folders
 _folders:

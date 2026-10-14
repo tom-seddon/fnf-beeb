@@ -52,7 +52,7 @@ init_crtc:.block
 
 crtc_values:
                 .byte 6,screen_line_count/8 ; displayed character rows
-                .byte 7,30                  ; vsync position (MODE 2 default 34)
+                .byte 7,32                  ; vsync position (MODE 2 default 34)
                 .byte 10,$20                ; cursor off
                 .byte 12,>(screen>>3)       ; screen start
                 .byte 13,<(screen>>3)

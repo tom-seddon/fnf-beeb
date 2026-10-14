@@ -503,9 +503,11 @@ Milestone 1 notes:
 
 Tooling:
 - `make run` builds and runs the `.ssd` in b2. `make screenshot`
-  peeks the screen and OS palette from b2 and writes
-  `build/beeb-screen.png`. It decodes memory, so it won't show CRTC
-  problems (position, size): check those in b2 itself.
+  saves b2's display (border included) to `build/beeb-screen.png`
+  using b2's `screenshot` endpoint.
+- Vertical position: R7=32 puts the picture as near centre as whole
+  character rows allow (90px of border above, 104px below in b2's
+  576-line output).
 - Possible for milestone 2: py65 (`pip3 install --user py65`) for
   headless frame-by-frame RAM comparison of the 2600 logic against the
   BBC build.
