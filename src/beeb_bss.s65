@@ -1,0 +1,18 @@
+;-------------------------------------------------------------------------
+; BBC workspace (outside zero page).
+;-------------------------------------------------------------------------
+
+; Last TIA colour applied to each dynamic role.
+role_colours:   .fill num_dynamic_roles
+
+; Screen bytes for the line being drawn, one per 4-pixel block.
+blocks:         .fill blocks_per_line
+
+; Renderer temps.
+row:            .fill 1
+line:           .fill 1
+fg_byte:        .fill 1
+bg_byte:        .fill 1
+pf_bits:        .fill 1
+draw_line_x:    .fill 1
+digit_offsets:  .fill 4         ; p0 left, p0 right, p1 left, p1 right

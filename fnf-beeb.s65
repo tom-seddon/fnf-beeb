@@ -1,0 +1,93 @@
+;-------------------------------------------------------------------------
+; Frogs and Flies - BBC Micro build
+;
+; Model B + DFS, OS kept running. $.!BOOT does MODE 2 then *RUN FNF.
+;
+; The shared game code (src/logic.s65, src/sound.s65, src/ram.s65,
+; src/data_*.s65) is assembled unchanged. The 2600 hardware registers
+; it uses are RAM shadow variables here - see fnf-2600.s65 for the
+; list.
+;-------------------------------------------------------------------------
+
+TARGET_2600=1
+TARGET_BEEB=2
+TARGET=TARGET_BEEB
+
+; Use the NTSC colours. (Timing is 50Hz regardless.)
+PAL=false
+
+                .include "submodules/beeb/include/beeb.s65"
+                .include "src/constants.s65"
+
+;-------------------------------------------------------------------------
+; Zero page.
+;-------------------------------------------------------------------------
+
+                .virtual $00
+                .include "src/ram.s65"
+                .cerror *!=$80,"game RAM must be 128 bytes"
+
+; Shadow registers that initialise_memory stores to via its table of
+; zero page addresses, so they must be in zero page.
+VDELP1:         .fill 1
+COLUP0:         .fill 1
+COLUP1:         .fill 1
+
+; Colour of the tongue drawn this frame (on the 2600 it's COLUPF of
+; the band the tongue is in).
+tongue_colour:  .fill 1
+
+; Renderer pointers.
+ptr:            .fill 2
+ptr2:           .fill 2
+
+zp_end:
+                .cerror *>$90,"zero page overflow"
+                .endv
+
+; The 2600 kernel's sprite row selector table. initialise_memory
+; points enabl_data_ptr at it, but nothing on the BBC reads that.
+sprite_row_selector_table=0
+
+;-------------------------------------------------------------------------
+
+* = $1900
+                .include "src/beeb_main.s65"
+                .include "src/beeb_render.s65"
+                .include "src/beeb_tables.s65"
+
+;-------------------------------------------------------------------------
+
+                .include "src/logic.s65"
+                .include "src/sound.s65"
+                .include "src/data_digits.s65"
+                .include "src/data_grp.s65"
+                .include "src/data_pf.s65"
+
+;-------------------------------------------------------------------------
+
+code_end:
+
+;-------------------------------------------------------------------------
+; Workspace outside zero page, after the code.
+;-------------------------------------------------------------------------
+
+                .virtual code_end
+
+; Shadow registers that only appear in ordinary addressing modes, so
+; can go anywhere.
+SWCHA:          .fill 1
+SWCHB:          .fill 1
+INPT4:          .fill 1
+INPT5:          .fill 1
+CXM0FB:         .fill 1
+CXM1FB:         .fill 1
+AUDC0:          .fill 2
+AUDF0:          .fill 2
+AUDV0:          .fill 2
+
+                .include "src/beeb_bss.s65"
+
+bss_end:
+                .cerror *>screen,"workspace overlaps screen"
+                .endv

@@ -41,9 +41,15 @@ in the working copy. The build fails unless these exactly match
 `Frogs and Flies (USA).a26` and `Frogs and Flies (Telegames)
 (PAL).bin` from the repo.
 
+The BBC version builds to `build/fnf-beeb.ssd`, and to `beeb/Z` for
+use with BeebLink. Type `make run` to run it in b2, and `make
+screenshot` to save its screen to `build/beeb-screen.png`.
+
 # source layout
 
 * `fnf-2600.s65` - top level for the 2600 build
+* `fnf-beeb.s65` - top level for the BBC build
+* `src/beeb_*.s65` - BBC only
 * `src/logic.s65`, `src/sound.s65`, `src/ram.s65`, `src/data_*.s65` -
   shared between the 2600 and BBC builds
 * `src/tia*.s65`, `src/riot.s65` - 2600 only

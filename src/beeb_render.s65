@@ -1,0 +1,403 @@
+;-------------------------------------------------------------------------
+; Rendering (BBC only).
+;
+; 160x192 MODE 2 screen. TIA colour clocks map 1:1 to MODE 2 pixels.
+; Everything in the background is made of 4-pixel playfield blocks
+; (2 screen bytes), 40 to a line.
+;
+; Colours are by role: each 2600 colour register role gets its own
+; logical colour, and update_palette keeps the palette in step with
+; the game's colour variables.
+;-------------------------------------------------------------------------
+
+screen=$4400
+screen_line_count=192
+blocks_per_line=40
+
+; Vertical layout, following the 2600 display: the score area (2
+; blank lines, 5 digit rows of 3 lines, 4 blank lines), then PF rows
+; 84..11 drawn by the kernel loop and rows 10..0 drawn after it, 2
+; lines per row. That's 191 lines; the last is blank.
+score_digits_line=2
+score_digit_row_lines=3
+pf_line=21
+pf_row_lines=2
+pf_top_row=84
+border_line=pf_line+(pf_top_row+1)*pf_row_lines
+                .cerror border_line!=screen_line_count-1
+
+; Logical colour for each role.
+role_sky=0                      ; byte_98 (bands 0-2 BG)
+role_water=1                    ; byte_9B (band 3 BG)
+role_tree=2                     ; byte_9C (band 0 PF)
+role_khaki=3                    ; byte_9D (band 1 PF)
+role_lily=4                     ; byte_9E (bands 2-3 PF)
+role_frog0=5                    ; COLUP0
+role_frog1=6                    ; COLUP1 (and flies)
+role_spare=7                    ; COLUP1 for now
+role_tongue=8                   ; tongue_colour
+role_score0=9                   ; pl_colours
+role_score1=10                  ; pl_colours+1
+role_score_bg=11                ; byte_87
+num_dynamic_roles=12
+role_border=12                  ; always black
+num_roles=16
+
+;-------------------------------------------------------------------------
+; Initialise the palette: the fixed roles get set once, and the
+; dynamic ones are marked as needing setting.
+;-------------------------------------------------------------------------
+
+init_palette:.block
+                ldx #num_dynamic_roles-1
+                lda #1          ; never a game colour
+-
+                sta role_colours,x
+                dex
+                bpl -
+
+                ldx #num_roles-1
+-
+                lda #0
+                jsr set_role_colour
+                dex
+                cpx #num_dynamic_roles
+                bcs -
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Bring the palette up to date with the game's colour variables.
+;-------------------------------------------------------------------------
+
+update_palette:.block
+                ldx #num_dynamic_roles-1
+-
+                ldy role_sources,x
+                lda $0000,y
+                cmp role_colours,x
+                beq +
+                sta role_colours,x
+                jsr set_role_colour
++
+                dex
+                bpl -
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Set the colour of a role.
+;
+; Entry: X = role (logical colour); A = TIA colour
+; Exit: X preserved
+;-------------------------------------------------------------------------
+
+set_role_colour:.block
+                lsr a
+                tay
+                lda #19
+                jsr oswrch
+                txa
+                jsr oswrch
+                lda tia_to_beeb,y
+                jsr oswrch
+                lda #0
+                jsr oswrch
+                jsr oswrch
+                jmp oswrch
+                .endblock
+
+;-------------------------------------------------------------------------
+; Draw the whole background: score area (blank), playfield, border.
+;-------------------------------------------------------------------------
+
+draw_background:.block
+                ; Blank score area lines.
+                lda #role_score_bg
+                jsr fill_blocks
+                lda #0
+                jsr draw_line
+                lda #1
+                jsr draw_line
+                lda #pf_line-4
+-
+                pha
+                jsr draw_line
+                pla
+                clc
+                adc #1
+                cmp #pf_line
+                bne -
+
+                ; Playfield.
+                lda #pf_top_row
+                sta row
+                lda #pf_line
+                sta line
+-
+                ldx row
+                jsr build_pf_blocks
+                lda line
+                jsr draw_line
+                inc line
+                lda line
+                jsr draw_line
+                inc line
+                dec row
+                bpl -
+
+                ; Border.
+                lda #role_border
+                jsr fill_blocks
+                lda #border_line
+                jmp draw_line
+                .endblock
+
+;-------------------------------------------------------------------------
+; Draw both scores, from pl_scores.
+;
+; As on the 2600, they're PF1 data: player 0's in PF1 on the left half
+; of the screen, player 1's in PF1 on the right half (not reflected).
+;-------------------------------------------------------------------------
+
+draw_scores:.block
+                ; Find each digit's data, as an offset from
+                ; left_digits_pf_data, same as prepare_display: left
+                ; digits at 5*digit, right digits at 50+5*digit.
+                ldx #1
+-
+                txa
+                asl a
+                tay             ; Y=2*player index
+                lda pl_scores,x
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                sta digit_offsets+0,y
+                asl a
+                asl a
+                adc digit_offsets+0,y
+                sta digit_offsets+0,y
+                lda pl_scores,x
+                and #$0f
+                sta digit_offsets+1,y
+                asl a
+                asl a
+                adc digit_offsets+1,y
+                adc #50
+                sta digit_offsets+1,y
+                dex
+                bpl -
+
+                ; Digit data is stored bottom row first.
+                lda #4
+                sta row
+                lda #score_digits_line
+                sta line
+digit_rows_loop:
+                ldx #role_score_bg
+                lda solid_bytes,x
+                sta bg_byte
+                jsr fill_blocks_with_bg_byte
+
+                ldx #role_score0
+                lda #0
+                jsr build_digit_blocks
+                ldx #role_score1
+                lda #2
+                jsr build_digit_blocks
+
+                ldx #score_digit_row_lines
+-
+                lda line
+                jsr draw_line
+                inc line
+                dex
+                bne -
+
+                dec row
+                bpl digit_rows_loop
+                rts
+
+; Entry: X = colour role; A = 2*player index
+build_digit_blocks:
+                tay
+                lda solid_bytes,x
+                sta fg_byte
+                lda digit_offsets+0,y
+                clc
+                adc row
+                tax
+                lda left_digits_pf_data,x
+                pha
+                lda digit_offsets+1,y
+                clc
+                adc row
+                tax
+                pla
+                eor left_digits_pf_data,x
+                sta pf_bits
+                ; PF1 is blocks 4-11 on the left, 24-31 on the right.
+                lda #4
+                cpy #0
+                beq +
+                lda #24
++
+                tay
+                ldx #8
+-
+                asl pf_bits
+                jsr put_block
+                dex
+                bne -
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Fill blocks with a solid colour.
+;
+; Entry: A = logical colour
+;-------------------------------------------------------------------------
+
+fill_blocks:.block
+                tax
+                lda solid_bytes,x
+                sta bg_byte
+                .endblock
+fill_blocks_with_bg_byte:.block
+                ldx #blocks_per_line-1
+-
+                sta blocks,x
+                dex
+                bpl -
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Build blocks for a playfield row.
+;
+; The playfield is reflected: PF0 bits 4-7, PF1 bits 7-0, PF2 bits 0-7
+; from left to right, then the same again mirrored.
+;
+; Entry: X = PF row (0-84)
+;-------------------------------------------------------------------------
+
+build_pf_blocks:.block
+                ldy pf_row_bands,x
+                lda band_fg_roles,y
+                sty pf_bits
+                tay
+                lda solid_bytes,y
+                sta fg_byte
+                ldy pf_bits
+                lda band_bg_roles,y
+                tay
+                lda solid_bytes,y
+                sta bg_byte
+
+                ldy #0
+
+                lda pf0_data,x
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                sta pf_bits
+                jsr put_pf_bits_lsb_first_4
+
+                lda pf1_data,x
+                sta pf_bits
+                txa
+                pha
+                ldx #8
+-
+                asl pf_bits
+                jsr put_block
+                dex
+                bne -
+                pla
+                tax
+
+                lda pf2_data,x
+                sta pf_bits
+                jsr put_pf_bits_lsb_first_4
+                jsr put_pf_bits_lsb_first_4
+
+                ; Mirror into the right half.
+                ldx #blocks_per_line/2-1
+-
+                lda blocks,x
+                sta blocks,y
+                iny
+                dex
+                bpl -
+                rts
+
+put_pf_bits_lsb_first_4:
+                jsr put_pf_bits_lsb_first_2
+put_pf_bits_lsb_first_2:
+                lsr pf_bits
+                jsr put_block
+                lsr pf_bits
+                jmp put_block
+                .endblock
+
+;-------------------------------------------------------------------------
+; Store fg_byte (C=1) or bg_byte (C=0) to the next block.
+;
+; Entry: Y = block index
+; Exit: Y incremented; X, C preserved
+;-------------------------------------------------------------------------
+
+put_block:.block
+                lda bg_byte
+                bcc +
+                lda fg_byte
++
+                sta blocks,y
+                iny
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Draw the blocks onto a screen line.
+;
+; Entry: A = screen line
+; Exit: X preserved
+;-------------------------------------------------------------------------
+
+draw_line:.block
+                stx draw_line_x
+                tax
+                lda line_addrs_lo,x
+                sta ptr+0
+                clc
+                adc #8
+                sta ptr2+0
+                lda line_addrs_hi,x
+                sta ptr+1
+                adc #0
+                sta ptr2+1
+
+                ldx #0
+                ldy #0
+-
+                lda blocks,x
+                sta (ptr),y
+                sta (ptr2),y
+                tya
+                clc
+                adc #16
+                tay
+                bcc +
+                inc ptr+1
+                inc ptr2+1
++
+                inx
+                cpx #blocks_per_line
+                bne -
+
+                ldx draw_line_x
+                rts
+                .endblock

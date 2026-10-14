@@ -1,0 +1,99 @@
+;-------------------------------------------------------------------------
+; Entry point and main loop (BBC only).
+;-------------------------------------------------------------------------
+
+main:
+                ; Clear the game's zero page. (Unlike the 2600, leave
+                ; the rest alone: the OS is still running.)
+                lda #0
+                ldx #zp_end-1
+-
+                sta $00,x
+                dex
+                cpx #$ff
+                bne -
+
+                lda #229        ; disable Escape
+                ldx #1
+                ldy #0
+                jsr osbyte
+
+                jsr init_crtc
+                jsr initialise_memory
+                jsr init_palette
+                jsr prepare_colours
+                jsr update_palette
+                jsr draw_background
+                jsr draw_scores
+
+main_loop:
+                lda #19         ; wait for vsync
+                jsr osbyte
+                jsr prepare_colours
+                jsr update_palette
+                jmp main_loop
+
+;-------------------------------------------------------------------------
+; Set up the CRTC for the 160x192 screen at &4400. Assumes MODE 2 has
+; already been selected.
+;-------------------------------------------------------------------------
+
+init_crtc:.block
+                ldx #crtc_values_end-crtc_values-2
+-
+                lda crtc_values+0,x
+                sta $fe00
+                lda crtc_values+1,x
+                sta $fe01
+                dex
+                dex
+                bpl -
+                rts
+
+crtc_values:
+                .byte 6,screen_line_count/8 ; displayed character rows
+                .byte 7,30                  ; vsync position (MODE 2 default 34)
+                .byte 10,$20                ; cursor off
+                .byte 12,>(screen>>3)       ; screen start
+                .byte 13,<(screen>>3)
+crtc_values_end:
+                .endblock
+
+;-------------------------------------------------------------------------
+; Compute the band colours for the frame from the time of day.
+;
+; This is the colour part of the 2600's prepare_display. The 2600 code
+; swaps the BG and PF colours when it inverts the playfield
+; (unk_E6,x odd - the end sequence flicker), which leaves the main
+; picture unchanged. The BBC picture isn't inverted, so here the band
+; colours always go the normal way round, and only the things that do
+; visibly change follow the flag: the score area background (byte_87).
+;
+; TODO: share this with the 2600 code (milestone 2).
+;-------------------------------------------------------------------------
+
+prepare_colours:.block
+                lda byte_B7
+                asl a
+                asl a
+                tay
+                ldx #3
+-
+                dey
+                lda unk_F7A2,y
+                sta byte_98,x
+                lda unk_F79E,x
+                sta byte_9C,x
+                dex
+                bpl -
+
+                ldx byte_E5
+                lda unk_E6,x
+                lsr a
+                lda byte_98
+                bcc +
+                lda byte_9C
++
+                sta byte_87
+                rts
+                .endblock

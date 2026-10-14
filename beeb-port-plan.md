@@ -474,15 +474,38 @@ To revisit once the game is running:
 | Milestone | Status |
 |---|---|
 | 0. Refactor, 2600 still byte-exact | done (3dec04f) |
-| 1. Beeb skeleton | next |
-| 2. Logic transplant + frogs | |
+| 1. Beeb skeleton | done, pending a by-eye check against Stella |
+| 2. Logic transplant + frogs | next |
 | 3. Flies, tongue, collision, score | |
 | 4. The rest of the game | |
 
+Milestone 1 notes:
+- `fnf-beeb.s65` assembles the shared code unchanged. Only `VDELP1`,
+  `COLUP0` and `COLUP1` need to be zero page shadows (they're in
+  `initial_addrs`). The other shadow registers live after the code
+  and the shared code just uses absolute addressing for them.
+- Zero page: game RAM &00-&7F, shadows and renderer pointers from
+  &80 (`zp_end` checks it stays below &90). Code ends around &2900.
+- Screen layout (`src/beeb_render.s65`): score area lines 0-20
+  (digits on lines 2-16), PF rows 84..0 on lines 21-190 at 2 lines
+  each, line 191 black.
+- Stock ULA colours come from `tools/make_tia_to_beeb.py`, which
+  classifies by hue rather than nearest RGB (nearest RGB turns the
+  greens and khaki black). Time of day 7 gives cyan sky, blue water,
+  green trees and lily pads, and yellow reeds. Trees and lily pads are
+  both green: revisit with dithering or VideoNuLA.
+- Band boundaries follow `unk_FEB5` (water from PF row 31 down, reeds
+  rows 48-55). `tools/pf_convert.py` has them one row different in
+  places, so check this against Stella.
+- `prepare_colours` (`src/beeb_main.s65`) duplicates the colour half
+  of `prepare_display`. Share it when `prepare_display` is split in
+  milestone 2.
+
 Tooling:
-- Planned for milestone 1: a `make run` target that resets b2 and
-  runs the `.ssd` through its HTTP API, and a script that peeks screen
-  memory and turns it into a PNG.
+- `make run` builds and runs the `.ssd` in b2. `make screenshot`
+  peeks the screen and OS palette from b2 and writes
+  `build/beeb-screen.png`. It decodes memory, so it won't show CRTC
+  problems (position, size): check those in b2 itself.
 - Possible for milestone 2: py65 (`pip3 install --user py65`) for
   headless frame-by-frame RAM comparison of the 2600 logic against the
   BBC build.
