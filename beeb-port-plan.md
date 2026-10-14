@@ -481,8 +481,8 @@ To revisit once the game is running:
 |---|---|
 | 0. Refactor, 2600 still byte-exact | done (3dec04f) |
 | 1. Beeb skeleton | done (d747ef5, checked against Stella) |
-| 2. Logic transplant + frogs | in progress: needs a keyboard play test |
-| 3. Flies, tongue, collision, score | |
+| 2. Logic transplant + frogs | done (439dc8a, 0e92285; keyboard play tested) |
+| 3. Flies, tongue, collision, score | next |
 | 4. The rest of the game | |
 
 Milestone 1 notes:
