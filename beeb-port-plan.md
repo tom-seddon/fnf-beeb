@@ -464,6 +464,12 @@ Decided on 2026-09-28:
   Input). It only has to be visible. If it isn't self-explanatory, the
   instructions can explain it.
 
+Decided on 2026-10-14:
+- **Playfield symmetry:** the BBC background stays exactly
+  symmetrical. The 2600's mid-line PF write effect (see Status) is
+  not copied. `tools/compare_stella.py` will keep reporting those
+  pixels as differences.
+
 To revisit once the game is running:
 - Fly colour.
 
@@ -495,8 +501,17 @@ Milestone 1 notes:
   green trees and lily pads, and yellow reeds. Trees and lily pads are
   both green: revisit with dithering or VideoNuLA.
 - Band boundaries follow `unk_FEB5` (water from PF row 31 down, reeds
-  rows 48-55). `tools/pf_convert.py` has them one row different in
-  places, so check this against Stella.
+  rows 48-55). Checked against Stella with `tools/compare_stella.py`:
+  they match exactly (`tools/pf_convert.py` is wrong by a row in
+  places).
+- The 2600 picture isn't quite symmetrical. The kernel writes PF2 and
+  PF1 while the beam is in the right half, so on the second scanline
+  of each kernel row, right-half x 100-111 (PF2 bits 2-0) and x 132-143
+  (PF1 bits 5-7) already show the next row down. The exact write time
+  shifts a little on rows with sprites, so a few rows don't show it.
+  The rows after the kernel loop (10-0) write PF in hblank and don't
+  show it. This accounts for all but 8 of the 322 pixels that differ
+  from Stella. The BBC doesn't copy this (see Decisions).
 - `prepare_colours` (`src/beeb_main.s65`) duplicates the colour half
   of `prepare_display`. Share it when `prepare_display` is split in
   milestone 2.
