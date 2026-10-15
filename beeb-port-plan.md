@@ -438,7 +438,7 @@ Stella.
    - tearing
    - 6:5 NTSC speed option
    - title and instruction screen, key redefinition
-   - Master/Electron considerations
+   - Master considerations
 
 **Optional but cheap confidence check:** the logic is the same code, so
 the same seed and the same per-frame inputs should give the same RAM on
@@ -474,6 +474,7 @@ Decided on 2026-10-15:
 - **Dark greys:** on a stock BBC, the TIA greys ($02-$0E) map to
   white; only $00 is black. Frog 0 ($04) is therefore white rather
   than black, but it stays visible against the black night sky.
+- **No Electron version.** Dropped from the "later" list.
 
 To revisit once the game is running:
 - Fly colour.
