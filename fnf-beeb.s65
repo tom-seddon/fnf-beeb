@@ -44,6 +44,7 @@ ptr2:           .fill 2
 ; Sprite drawing.
 sprite_colour:  .fill 1
 sprite_col_masks:.fill 5
+sprite_data:    .fill 2
 
 zp_end:
                 .cerror *>$90,"zero page overflow"

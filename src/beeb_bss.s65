@@ -31,7 +31,7 @@ saved_lines:    .fill num_sprites
 saved_cols:     .fill num_sprites
 saved_col_offsets_lo:.fill num_sprites
 saved_col_offsets_hi:.fill num_sprites
-save_buffers:   .fill num_sprites*sprite_save_size
+save_buffers:   .fill save_buffers_size
 
 ; Sprite drawing temps.
 sprite_index:   .fill 1
@@ -42,9 +42,11 @@ sprite_x:       .fill 1
 sprite_reflect: .fill 1
 sprite_col:     .fill 1
 sprite_cols:    .fill 1
+sprite_width_cols:.fill 1
 sprite_col_offset:.fill 2
 sprite_entry:   .fill 2
+fly_write_x:    .fill 1
+clip_skip:      .fill 1
 
 ; Time taken by the last update_palette+render_frame, in us.
 render_time:    .fill 2
-render_start_time:.fill 2

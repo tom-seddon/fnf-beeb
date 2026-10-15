@@ -5,20 +5,44 @@
 ; leftmost unless reflected. Each sprite saves what's under it, and
 ; is restored before anything is drawn the next frame.
 ;
-; Frog geometry, matching Stella: frog i is visible on kernel lines
-; pl_ys[i]-9 .. pl_ys[i]-1 (and only kernel lines 1-74). On the BBC,
-; sprite row k (0-17) is on screen line 171-2*pl_ys[i]+k, and its
-; GRP byte is at grp_data+byte_DB[i]-2-k. Screen X is pl_xs[i]+1.
+; Kernel timing (from the PF2/PF1 mid-line writes measured against
+; Stella): kernel loop iteration y starts at cycle 33 of BBC screen
+; line 167-2y, and is 152 cycles (2 lines) long. Sprites can only
+; appear on lines 22-167, the lines the loop draws objects on.
+;
+; Frogs, matching Stella: frog i is visible on kernel lines
+; pl_ys[i]-9 .. pl_ys[i]-1. Sprite row k (0-17) is on screen line
+; 171-2*pl_ys[i]+k, and its GRP byte is at grp_data+byte_DB[i]-2-k.
+; Screen X is pl_xs[i]+1.
+;
+; Flies are missiles. They're 4 pixels wide on frames with byte_B3
+; bit 1 clear (kernel lines mi_y-2..mi_y-1), and 2 pixels wide
+; otherwise (kernel lines mi_y-2..mi_y, X+2 if moving right). The
+; kernel sets ENAM0 at beam X 94 and ENAM1 at X 118, on the first line
+; of each iteration, so a missile left of that X appears a line lower.
+; The flies swap between M0 and M1 every frame (M0 = fly 0 when
+; byte_B3 is odd). Screen X is mi_xs[i] (missiles start drawing a
+; clock earlier than players). Flies are always frog 1's colour.
 ;-------------------------------------------------------------------------
 
-num_sprites=2                   ; frog 0, frog 1
-sprite_max_rows=18
-sprite_max_cols=5               ; 8 pixels at an odd X span 5 bytes
-sprite_save_size=sprite_max_rows*sprite_max_cols
+; Sprite slots.
+sprite_frog0=0
+sprite_frog1=1
+sprite_fly0=2
+sprite_fly1=3
+num_sprites=4
 
-; Screen lines the kernel draws sprites on (kernel lines 74..1).
-sprite_first_line=pf_line
-sprite_last_line=pf_line+(pf_top_row-10)*pf_row_lines-1
+sprite_max_cols=5               ; 8 pixels at an odd X span 5 bytes
+frog_rows=18
+fly_rows=6
+
+; Screen lines the kernel draws sprites on (kernel lines 73..1).
+sprite_first_line=22
+sprite_last_line=167
+
+; Beam X of the ENAM0/ENAM1 writes.
+enam0_write_x=94
+enam1_write_x=118
 
 ;-------------------------------------------------------------------------
 
@@ -35,19 +59,28 @@ init_sprites:.block
 ;-------------------------------------------------------------------------
 ; Restore what's under the sprites, then draw them again from the
 ; current game state. Also redraw the scores if they've changed.
+;
+; Drawing order follows TIA priority, lowest first: flies, frog 1,
+; frog 0. Restoring is in the reverse order.
 ;-------------------------------------------------------------------------
 
 render_frame:.block
-                ; Restore in the reverse of the drawing order.
-                ldx #0
+                ldx #sprite_frog0
                 jsr restore_sprite
-                ldx #1
+                ldx #sprite_frog1
+                jsr restore_sprite
+                ldx #sprite_fly1
+                jsr restore_sprite
+                ldx #sprite_fly0
                 jsr restore_sprite
 
-                ; Draw lowest priority first: P1, then P0 on top.
-                ldx #1
+                ldx #sprite_fly0
+                jsr draw_fly
+                ldx #sprite_fly1
+                jsr draw_fly
+                ldx #sprite_frog1
                 jsr draw_frog
-                ldx #0
+                ldx #sprite_frog0
                 jsr draw_frog
 
                 lda pl_scores+0
@@ -63,7 +96,8 @@ render_frame:.block
                 .endblock
 
 ;-------------------------------------------------------------------------
-; Entry: X = frog (0 or 1)
+; Entry: X = sprite slot (sprite_frog0 or sprite_frog1, which are also
+;        the frog index)
 ;-------------------------------------------------------------------------
 
 draw_frog:.block
@@ -82,47 +116,21 @@ draw_frog:.block
                 sec
                 adc #171        ; A=171-2*pl_y = line of row 0
                 sta sprite_line
+                lda #frog_rows
+                sta sprite_rows
 
-                ; Data address of row 0, as an offset into grp_data.
+                ; Data address of row 0.
+                lda #<grp_data
+                sta sprite_data+0
+                lda #>grp_data
+                sta sprite_data+1
                 lda byte_DB,x
                 sec
                 sbc #2
                 sta sprite_data_offset
 
-                ; Clip the top.
-                lda sprite_line
-                cmp #sprite_first_line
-                bcs +
-                lda #sprite_first_line
-                sec
-                sbc sprite_line ; A=rows to skip
-                tay
-                clc
-                adc sprite_line
-                sta sprite_line
-                tya
-                eor #$ff
-                sec
-                adc sprite_data_offset
-                sta sprite_data_offset
-                tya
-                eor #$ff
-                sec
-                adc #sprite_max_rows
-                bne ++          ; always taken
-+
-                lda #sprite_max_rows
-+
-                sta sprite_rows
-
-                ; Clip the bottom.
-                lda #sprite_last_line+1
-                sec
-                sbc sprite_line ; A=lines available
-                cmp sprite_rows
-                bcs +
-                sta sprite_rows
-+
+                jsr clip_sprite
+                beq done
 
                 ; Horizontal position. The TIA wraps at 160.
                 lda pl_xs,x
@@ -138,11 +146,161 @@ draw_frog:.block
                 beq +
                 ldy #role_frog1
 +
+                lda #4
+                sta sprite_width_cols
                 lda pl_flags,x  ; reflected if bit 3 set
                 tax
                 lda sprite_x
-                jsr draw_sprite
+                jmp draw_sprite
 done:
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Entry: X = sprite slot (sprite_fly0 or sprite_fly1)
+;-------------------------------------------------------------------------
+
+draw_fly:.block
+                stx sprite_index
+                lda #0
+                sta saved_rows,x
+                lda #<fly_data
+                sta sprite_data+0
+                lda #>fly_data
+                sta sprite_data+1
+
+                ; Which missile draws this fly this frame, and so where
+                ; the beam is when it's enabled.
+                txa
+                sec
+                sbc #sprite_fly0
+                tay             ; Y=fly index
+                eor byte_B3
+                and #1          ; 1=M0, 0=M1
+                beq +
+                lda #enam0_write_x
+                bne ++
++
+                lda #enam1_write_x
++
+                sta fly_write_x
+
+                ; Size.
+                lda byte_B3
+                and #2
+                bne narrow
+
+                ; 4 pixels wide, kernel lines mi_y-2..mi_y-1.
+                lda #fly_wide_top
+                sta sprite_data_offset
+                lda #fly_wide_rows
+                sta sprite_rows
+                lda #2
+                sta sprite_width_cols
+                lda mi_xs,y
+                ldx #170
+                bne got_size    ; always taken
+
+narrow:
+                ; 2 pixels wide, kernel lines mi_y-2..mi_y; 2 pixels to
+                ; the right if moving right.
+                lda #fly_narrow_top
+                sta sprite_data_offset
+                lda #fly_narrow_rows
+                sta sprite_rows
+                lda #1
+                sta sprite_width_cols
+                lda mi_dxs,y
+                asl a           ; C=1 if moving left
+                lda mi_xs,y
+                bcs +
+                adc #2
++
+                ldx #168
+
+got_size:
+                ; The TIA wraps at 160.
+                cmp #160
+                bcc +
+                sbc #160
++
+                sta sprite_x
+
+                ; X = line of the top row if left of the ENAM write.
+                ; One line higher if right of it.
+                cmp fly_write_x
+                bcc +
+                dex
++
+                stx sprite_line
+
+                ; Vertical position.
+                lda mi_ys,y
+                cmp #2
+                bcc done
+                cmp #84
+                bcs done
+                asl a
+                eor #$ff
+                sec
+                adc sprite_line
+                sta sprite_line ; line of top row: X-2*mi_y
+
+                ldx sprite_index
+                jsr clip_sprite
+                beq done
+
+                ldx #0          ; not reflected
+                ldy #role_frog1
+                lda sprite_x
+                jmp draw_sprite
+done:
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Clip a sprite to the lines the kernel draws objects on.
+;
+; Entry: sprite_line = line of top row (1-167); sprite_rows;
+;        sprite_data_offset = offset of top row
+; Exit: sprite_line, sprite_rows, sprite_data_offset updated; Z=1 if
+;       nothing left; X preserved
+;-------------------------------------------------------------------------
+
+clip_sprite:.block
+                ; Top.
+                lda #sprite_first_line
+                sec
+                sbc sprite_line ; A=rows to skip, if positive
+                beq bottom
+                bcc bottom
+                cmp sprite_rows
+                bcs none        ; all of it
+                sta clip_skip
+                lda #sprite_first_line
+                sta sprite_line
+                lda sprite_data_offset
+                sec
+                sbc clip_skip
+                sta sprite_data_offset
+                lda sprite_rows
+                sec
+                sbc clip_skip
+                sta sprite_rows
+
+bottom:
+                lda #sprite_last_line+1
+                sec
+                sbc sprite_line ; A=lines available (sprite_line<=167)
+                cmp sprite_rows
+                bcs +
+                sta sprite_rows
++
+                lda sprite_rows
+                rts
+
+none:
+                lda #0
                 rts
                 .endblock
 
@@ -156,8 +314,9 @@ done:
 ; 4 or 5, or fewer at the right edge.
 ;
 ; Entry: A = X position (0-159); Y = colour role; X = flags (bit 3 set
-;        if reflected); sprite_index, sprite_line, sprite_rows,
-;        sprite_data_offset set up
+;        if reflected); sprite_index, sprite_line, sprite_rows (>0),
+;        sprite_data, sprite_data_offset, sprite_width_cols (byte
+;        columns at an even X: 4 for 8 pixels) set up
 ;-------------------------------------------------------------------------
 
 draw_sprite:.block
@@ -171,7 +330,7 @@ draw_sprite:.block
                 ; Skip blank rows at the top...
 -
                 ldy sprite_data_offset
-                lda grp_data,y
+                lda (sprite_data),y
                 bne +
                 inc sprite_line
                 dec sprite_data_offset
@@ -183,9 +342,10 @@ draw_sprite:.block
 -
                 lda sprite_data_offset
                 sec
-                sbc sprite_rows ; A=offset of last row-1
+                sbc sprite_rows
                 tay
-                lda grp_data+1,y
+                iny             ; Y=offset of last row
+                lda (sprite_data),y
                 bne +
                 dec sprite_rows
                 bne -           ; (not taken: there's a non-blank row)
@@ -195,7 +355,7 @@ draw_sprite:.block
                 lda sprite_x
                 lsr a
                 sta sprite_col
-                lda #4
+                lda sprite_width_cols
                 adc #0          ; +1 if odd X
                 sta sprite_cols
                 lda #80
@@ -258,7 +418,7 @@ row_loop:
 
                 ; Masks for each column.
                 ldy sprite_data_offset
-                lda grp_data,y
+                lda (sprite_data),y
                 ldy sprite_reflect
                 beq +
                 tay
@@ -427,7 +587,24 @@ restore_cols_entries:=[restore_sprite.restore_col_entry_0,restore_sprite.restore
 restore_cols_entries_lo:.byte <restore_cols_entries
 restore_cols_entries_hi:.byte >restore_cols_entries
 
+; Save buffers: frogs need up to 18 rows, flies up to 6.
 save_buffer_offsets:
-                .for i_=0,i_<num_sprites,i_+=1
-                .byte i_*sprite_save_size
-                .next
+                .byte 0
+                .byte frog_rows*sprite_max_cols
+                .byte 2*frog_rows*sprite_max_cols
+                .byte 2*frog_rows*sprite_max_cols+fly_rows*sprite_max_cols
+save_buffers_size=2*frog_rows*sprite_max_cols+2*fly_rows*sprite_max_cols
+                .cerror save_buffers_size>256
+
+;-------------------------------------------------------------------------
+
+; Fly shapes, as sprite data (top row at the highest address).
+fly_data:
+                .byte 0
+fly_wide_top=*-fly_data+fly_wide_rows-1
+fly_wide_rows=4
+                .fill fly_wide_rows,%11110000
+fly_narrow_top=*-fly_data+fly_narrow_rows-1
+fly_narrow_rows=6
+                .fill fly_narrow_rows,%11000000
+                .cerror fly_narrow_rows!=fly_rows

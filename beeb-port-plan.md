@@ -482,7 +482,7 @@ To revisit once the game is running:
 | 0. Refactor, 2600 still byte-exact | done (3dec04f) |
 | 1. Beeb skeleton | done (d747ef5, checked against Stella) |
 | 2. Logic transplant + frogs | done (439dc8a, 0e92285; keyboard play tested) |
-| 3. Flies, tongue, collision, score | next |
+| 3. Flies, tongue, collision, score | in progress: flies done |
 | 4. The rest of the game | |
 
 Milestone 1 notes:
@@ -544,6 +544,41 @@ Milestone 2 notes:
   into a player jump over the water.
 - b2's `screenshot` lags RAM by a few frames, so compare screenshots
   with RAM only when the game state is steady.
+
+Milestone 3 notes:
+- Split into three steps, each tested and committed separately:
+  flies, tongue (including sharing the logic half of
+  `prepare_display`), then collision and score.
+- Kernel timing: loop iteration y starts at cycle 33 of BBC line
+  167-2y and takes exactly 152 cycles (2 lines). This came from the
+  PF2/PF1 write positions measured against Stella (x 100 and 132). It
+  also gives the frog formula, and shows objects can only appear on
+  lines 22-167 (milestone 2 clipped to 21-168, which only mattered
+  while a frog was sinking).
+- Flies are missiles: 4 px wide on kernel lines `mi_y-2..mi_y-1` when
+  `byte_B3` bit 1 is clear, otherwise 2 px wide on `mi_y-2..mi_y`
+  (selector table page $FF instead of $FE) and 2 px right if moving
+  right. Screen X is `mi_x` (TIA missiles start a clock before
+  players). The kernel writes ENAM0 at beam x 94 and ENAM1 at x 118,
+  so a missile left of its write point appears a line lower; the
+  flies swap between M0 and M1 every frame, so between x 94 and 118 a
+  fly jitters by a line, as on the 2600. Consistent with the Stella
+  snapshot (both 4x4 flies start on even lines, which only the
+  "left of the write" case gives), but not checked against Stella
+  with known `mi_x`/`mi_y`.
+- Render timing, measured properly now with User VIA T2 (the T1-based
+  figures in milestone 2 were too low: when rendering ran past vsync,
+  the vsync event restarted T1 mid-render): 4.4-9.6ms with two frogs
+  and two flies, most when both frogs jump. Rendering now starts when
+  the beam passes line 168 (no sprites below 167) rather than 192.
+  The deadline for something on the top sprite line (22) is then
+  ~10.6ms; flies are drawn first, and frogs, drawn last, are rarely
+  above line 71 (deadline ~13.8ms). Flies only save and draw the byte
+  columns they need (1-3). Still worth watching as more is drawn.
+- Not copied: a missile straddling its write point is split into a
+  staircase on the 2600; the BBC treats the whole fly by its left edge.
+  And ENAM isn't cleared when the kernel loop ends, so on the 2600 a
+  fly at `mi_y` 2-3 would streak down to the bottom of the picture.
 
 Tooling:
 - `make run` builds and runs the `.ssd` in b2. `make screenshot`
