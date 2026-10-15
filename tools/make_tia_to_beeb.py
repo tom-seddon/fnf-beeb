@@ -6,8 +6,10 @@
 # matching doesn't work well (the game's mid greens and khaki all come
 # out black). Instead, classify by hue/saturation/value:
 #
+# - unsaturated (the $0x greys) -> white, unless almost black. Dark
+#   greys would otherwise be black, and frog 0 ($04) and some of the
+#   left score's colours would vanish against the black night sky.
 # - dark (max channel < DARK) -> black
-# - unsaturated -> white or black, by brightness
 # - otherwise the nearest of the 6 primary/secondary hues
 #
 # The sky ($9x) and water ($7x) families sit either side of the
@@ -19,7 +21,7 @@ import tia_palette
 
 DARK=0x50
 GREY_SATURATION=0.3
-GREY_WHITE=0x90
+GREY_WHITE=0x40
 
 BLACK,RED,GREEN,YELLOW,BLUE,MAGENTA,CYAN,WHITE=range(8)
 
@@ -36,8 +38,8 @@ def get_beeb_colour(rgb):
     r,g,b=rgb
     hi=max(rgb)
     lo=min(rgb)
+    if hi==0 or (hi-lo)/hi<GREY_SATURATION: return WHITE if hi>=GREY_WHITE else BLACK
     if hi<DARK: return BLACK
-    if (hi-lo)/hi<GREY_SATURATION: return WHITE if hi>=GREY_WHITE else BLACK
 
     if hi==r: hue=60*(g-b)/(hi-lo)
     elif hi==g: hue=120+60*(b-r)/(hi-lo)

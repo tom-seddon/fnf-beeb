@@ -470,6 +470,11 @@ Decided on 2026-10-14:
   not copied. `tools/compare_stella.py` will keep reporting those
   pixels as differences.
 
+Decided on 2026-10-15:
+- **Dark greys:** on a stock BBC, the TIA greys ($02-$0E) map to
+  white; only $00 is black. Frog 0 ($04) is therefore white rather
+  than black, but it stays visible against the black night sky.
+
 To revisit once the game is running:
 - Fly colour.
 
@@ -483,7 +488,7 @@ To revisit once the game is running:
 | 1. Beeb skeleton | done (d747ef5, checked against Stella) |
 | 2. Logic transplant + frogs | done (439dc8a, 0e92285; keyboard play tested) |
 | 3. Flies, tongue, collision, score | done (f373ba7, 679d89e, and this; play tested) |
-| 4. The rest of the game | next |
+| 4. The rest of the game | done (play tested) |
 
 Milestone 1 notes:
 - `fnf-beeb.s65` assembles the shared code unchanged. Only `VDELP1`,
@@ -615,6 +620,30 @@ Milestone 3 notes:
   staircase on the 2600; the BBC treats the whole fly by its left edge.
   And ENAM isn't cleared when the kernel loop ends, so on the 2600 a
   fly at `mi_y` 2-3 would streak down to the bottom of the picture.
+
+Milestone 4 notes:
+- Most of this was already running; the checks used pokes in b2 to
+  skip ahead. Poking `byte_B8` to 1 makes the next time-of-day step
+  happen within 64 frames, through the game's own code.
+- Time of day: all 7 steps change the band and score colours as on
+  the 2600. With 8 colours the sky stays cyan until the last step
+  (`byte_B7`=1), when it goes black.
+- End sequence (states 6-12) runs as on the 2600: the frogs jump off,
+  the flies leave, one crosses at y 56, and "THE / END" (frames $93
+  and $A5, frogs 0 and 1 side by side) slides in behind it and stops
+  at x 70/78, in COLUP0/1=$FF (yellow on the BBC). It stays there
+  until reset. `pf_eor_value` then flickers every frame; with the
+  swapped palette sources the picture doesn't change (on the 2600 the
+  only visible effect would be on a tongue).
+- Reset from the end screen gives a screen identical to a fresh start.
+  Idle takeover: a key press clears `pl_flags` bit 6 and sets the
+  idle counter to 15; when it runs out the CPU takes over again.
+  Difficulty: P0/P1 pro/amateur reach `pl_flags` bit 7.
+- Dark greys ($02, $04: frog 0's colour, and some of the left score's
+  colours) used to map to black, so at night (black sky) frog 0
+  vanished against the sky and the left score was invisible. Greys
+  now map to white unless almost black (see Decisions), so frog 0 and
+  the left score are white all game.
 
 Tooling:
 - `make run` builds and runs the `.ssd` in b2. `make screenshot`
