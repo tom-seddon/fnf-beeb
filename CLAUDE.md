@@ -29,5 +29,10 @@
   a frog, skipping ahead in time of day. It reads addresses from the
   last build, so `make` first. b2 must be set to draw every frame, and
   screenshots trail a peek by 1-2 frames.
+- Whenever b2's HTTP API gets in the way (something missing, awkward or
+  misleading), add an entry to `notes/b2-api-gaps.md`: what you were
+  doing, the problem, the workaround, and what would have helped. It's
+  the raw material for a human-readable document at the end of
+  milestone 5.
 - Target: BBC Model B with DFS, OS kept running, 160x192 MODE 2 screen
   at &4400.

@@ -440,6 +440,10 @@ Stella.
    - 6:5 NTSC speed option
    - title and instruction screen, key redefinition
    - Master considerations
+   - a human-readable document on where b2's HTTP API fell short
+     during this project (and why), and what facilities would help
+     future projects like this. Written from the agent-facing log
+     in `notes/b2-api-gaps.md`, which is kept up to date as work goes on.
 
 **Optional but cheap confidence check:** the logic is the same code, so
 the same seed and the same per-frame inputs should give the same RAM on
