@@ -482,7 +482,7 @@ To revisit once the game is running:
 | 0. Refactor, 2600 still byte-exact | done (3dec04f) |
 | 1. Beeb skeleton | done (d747ef5, checked against Stella) |
 | 2. Logic transplant + frogs | done (439dc8a, 0e92285; keyboard play tested) |
-| 3. Flies, tongue, collision, score | in progress: flies done |
+| 3. Flies, tongue, collision, score | in progress: flies and tongue done |
 | 4. The rest of the game | |
 
 Milestone 1 notes:
@@ -512,9 +512,8 @@ Milestone 1 notes:
   The rows after the kernel loop (10-0) write PF in hblank and don't
   show it. This accounts for all but 8 of the 322 pixels that differ
   from Stella. The BBC doesn't copy this (see Decisions).
-- `prepare_colours` (`src/beeb_main.s65`) duplicates the colour half
-  of `prepare_display`. Share it when `prepare_display` is split
-  (milestone 3, with the tongue).
+- `prepare_colours` (`src/beeb_main.s65`) duplicated the colour half
+  of `prepare_display` until milestone 3 shared it.
 
 Milestone 2 notes:
 - The shared logic runs every frame in the 2600's order, at 50Hz.
@@ -571,6 +570,24 @@ Milestone 3 notes:
   snapshot (both 4x4 flies start on even lines, which only the
   "left of the write" case gives), but not checked against Stella
   with known `mi_x`/`mi_y`.
+- Tongue (step 2): `prepare_display` is now shared
+  (`src/prepare_display.s65`), with its TIA setup in `.if
+  TARGET==TARGET_2600` blocks. On the BBC it records the tongue's frog
+  `pl_y` (`tongue_pl_y`, 0 for none) and ball X (`tongue_x`) instead
+  of positioning the ball. The BBC's copy of the colour code
+  (`prepare_colours`) is gone. When the 2600 code swaps the BG/PF
+  colours (`pf_eor_value`=$ff, end sequence flicker), the BBC palette
+  reads the role sources swapped back, so the picture stays the same
+  and the tongue and score area change as on the 2600. Not seen yet:
+  it only happens in the end sequence (milestone 4).
+- The tongue is the ball: 8x2 on kernel line `pl_y-3`, at screen X
+  `tongue_x` (like a missile), a line lower if left of the ENABL write
+  (beam x 70). Its colour is COLUPF of the band of kernel line
+  `pl_y-2` (the kernel sets COLUPF for a line at the start of the line
+  below). In the lily pad band that's the pads' colour, so a sitting
+  frog's tongue hardly shows over a pad, as on the 2600. Fire checked
+  by poking INPT4 with a frog parked mid-air: tongue out for ~0.36s,
+  both facings, both sides of x 70.
 - Render timing, measured properly now with User VIA T2 (the T1-based
   figures in milestone 2 were too low: when rendering ran past vsync,
   the vsync event restarted T1 mid-render): 4.4-9.6ms with two frogs

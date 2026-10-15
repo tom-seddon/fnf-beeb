@@ -61,8 +61,10 @@ A frog left idle is taken over by the computer.
 * `fnf-2600.s65` - top level for the 2600 build
 * `fnf-beeb.s65` - top level for the BBC build
 * `src/beeb_*.s65` - BBC only
-* `src/logic.s65`, `src/sound.s65`, `src/ram.s65`, `src/data_*.s65` -
-  shared between the 2600 and BBC builds
+* `src/logic.s65`, `src/prepare_display.s65`, `src/sound.s65`,
+  `src/ram.s65`, `src/data_*.s65` - shared between the 2600 and BBC
+  builds (`prepare_display.s65` has its TIA parts in `.if
+  TARGET==TARGET_2600` blocks)
 * `src/tia*.s65`, `src/riot.s65` - 2600 only
 * `tools/` - Python scripts for examining the ROM data
 * `beeb/0` - BBC-side experiments (BeebLink volume)

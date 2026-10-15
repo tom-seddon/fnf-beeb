@@ -4,7 +4,8 @@
 ; Reassembles byte-for-byte to the original NTSC (PAL=false) or PAL
 ; (PAL=true) ROM.
 ;
-; Platform-independent code lives in src/logic.s65 and src/sound.s65.
+; Platform-independent code lives in src/logic.s65 (which includes
+; src/prepare_display.s65, partly TIA-specific) and src/sound.s65.
 ; Between them they refer to the following 2600 hardware registers,
 ; which another platform must provide (e.g. as RAM shadow variables
 ; that its own code reads or writes):

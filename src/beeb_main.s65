@@ -40,7 +40,7 @@ game_start:
                 jsr initialise_memory
 
                 jsr init_palette
-                jsr prepare_colours
+                jsr prepare_display
                 jsr update_palette
                 jsr init_sprites
                 jsr draw_background
@@ -64,6 +64,7 @@ main_loop:
                 sta user_via.t2c_l
                 sta user_via.t2c_h
 
+                jsr set_tongue_colour
                 jsr update_palette
                 jsr render_frame
 
@@ -83,7 +84,7 @@ main_loop:
                 jmp game_start
 +
                 jsr sub_F6BE    ; TODO: software collision (milestone 3)
-                jsr prepare_colours
+                jsr prepare_display
                 inc byte_B3
                 jsr handle_players_inputs
                 jsr update_player_physics
@@ -157,43 +158,4 @@ crtc_values:
                 .byte 12,>(screen>>3)       ; screen start
                 .byte 13,<(screen>>3)
 crtc_values_end:
-                .endblock
-
-;-------------------------------------------------------------------------
-; Compute the band colours for the frame from the time of day.
-;
-; This is the colour part of the 2600's prepare_display. The 2600 code
-; swaps the BG and PF colours when it inverts the playfield
-; (unk_E6,x odd - the end sequence flicker), which leaves the main
-; picture unchanged. The BBC picture isn't inverted, so here the band
-; colours always go the normal way round, and only the things that do
-; visibly change follow the flag: the score area background (byte_87).
-;
-; TODO: share this with the 2600 code (milestone 2).
-;-------------------------------------------------------------------------
-
-prepare_colours:.block
-                lda byte_B7
-                asl a
-                asl a
-                tay
-                ldx #3
--
-                dey
-                lda unk_F7A2,y
-                sta byte_98,x
-                lda unk_F79E,x
-                sta byte_9C,x
-                dex
-                bpl -
-
-                ldx byte_E5
-                lda unk_E6,x
-                lsr a
-                lda byte_98
-                bcc +
-                lda byte_9C
-+
-                sta byte_87
-                rts
                 .endblock

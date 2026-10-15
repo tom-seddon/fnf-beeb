@@ -3,8 +3,9 @@
 ;
 ; Model B + DFS, OS kept running. $.!BOOT does MODE 2 then *RUN FNF.
 ;
-; The shared game code (src/logic.s65, src/sound.s65, src/ram.s65,
-; src/data_*.s65) is assembled unchanged. The 2600 hardware registers
+; The shared game code (src/logic.s65, src/prepare_display.s65,
+; src/sound.s65, src/ram.s65, src/data_*.s65) is assembled unchanged,
+; apart from prepare_display's TIA setup. The 2600 hardware registers
 ; it uses are RAM shadow variables here - see fnf-2600.s65 for the
 ; list.
 ;-------------------------------------------------------------------------

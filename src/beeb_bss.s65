@@ -50,3 +50,9 @@ clip_skip:      .fill 1
 
 ; Time taken by the last update_palette+render_frame, in us.
 render_time:    .fill 2
+
+; Tongue to draw, recorded by prepare_display.
+tongue_pl_y:    .fill 1         ; pl_y of its frog, or 0 if none
+tongue_x:       .fill 1
+
+palette_sources_offset:.fill 1

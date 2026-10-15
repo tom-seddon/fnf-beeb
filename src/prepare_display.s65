@@ -1,12 +1,16 @@
 ;-------------------------------------------------------------------------
-; Per-frame display setup (2600 only).
+; Per-frame display setup.
 ;
-; This is half game logic (tongue selection, colour bands) and half TIA
-; setup, so it will need splitting for other platforms.
+; Half of this is game logic, shared between platforms: the end
+; sequence flicker counter (unk_E6), choosing which frog's tongue to
+; show (byte_E5) and where, and the colour bands. The rest is TIA
+; setup, 2600 only. On the BBC, the tongue's position is recorded for
+; the renderer instead.
 ;-------------------------------------------------------------------------
 
 prepare_display:.block
 
+                .if TARGET==TARGET_2600
                 ldx #1          ; X=user index
 
 prepare_scores_loop:
@@ -58,6 +62,7 @@ prepare_players_loop:
                 sta REFP0,x; reflect the player sprite as required
                 dex
                 beq prepare_players_loop
+                .endif
                 lda COLUP0      ; colour-lum player 0
                 bpl loc_F81A
                 ldx byte_E5
@@ -76,12 +81,19 @@ loc_F826:
                 asl a
                 tay
                 stx byte_E5
+                .if TARGET==TARGET_2600
                 lda p0_sprite_row_selector_ptr,y
+                .endif
                 ldy pl_tongue_counters,x
                 beq loc_F850
+                .if TARGET==TARGET_2600
                 clc
                 adc #2
                 sta enabl_data_ptr
+                .else
+                lda pl_ys,x
+                sta tongue_pl_y
+                .endif
                 lda pl_flags,x
                 and #8
                 bne loc_F844
@@ -103,8 +115,13 @@ loc_F84B:
 ;-------------------------------------------------------------------------
 
 loc_F850:
+                .if TARGET==TARGET_2600
                 lda #<bottom_of_sprite
                 sta enabl_data_ptr
+                .else
+                lda #0
+                sta tongue_pl_y ; no tongue
+                .endif
                 lda #0
 
 loc_F856:
@@ -151,6 +168,10 @@ loc_F880:
 
 loc_F892:
                 pla
+                .if TARGET!=TARGET_2600
+                sta tongue_x
+                rts
+                .else
                 ldx #4
                 bpl loc_F899
 
@@ -212,4 +233,5 @@ loc_F8C4:
 
 loc_F8E1:
                 jmp apply_object_hmotions
+                .endif
                 .endblock

@@ -23,6 +23,12 @@
 ; The flies swap between M0 and M1 every frame (M0 = fly 0 when
 ; byte_B3 is odd). Screen X is mi_xs[i] (missiles start drawing a
 ; clock earlier than players). Flies are always frog 1's colour.
+;
+; The tongue is the ball: 8 pixels wide, on kernel line pl_y-3 of the
+; frog prepare_display chose (byte_E5), in the playfield colour. The
+; kernel writes ENABL at beam X 70, so as with the flies, a tongue left
+; of that appears a line lower. Screen X is the ball position
+; prepare_display works out (tongue_x), like a missile.
 ;-------------------------------------------------------------------------
 
 ; Sprite slots.
@@ -30,17 +36,20 @@ sprite_frog0=0
 sprite_frog1=1
 sprite_fly0=2
 sprite_fly1=3
-num_sprites=4
+sprite_tongue=4
+num_sprites=5
 
 sprite_max_cols=5               ; 8 pixels at an odd X span 5 bytes
 frog_rows=18
 fly_rows=6
+tongue_rows=2
 
 ; Screen lines the kernel draws sprites on (kernel lines 73..1).
 sprite_first_line=22
 sprite_last_line=167
 
-; Beam X of the ENAM0/ENAM1 writes.
+; Beam X of the ENABL/ENAM0/ENAM1 writes.
+enabl_write_x=70
 enam0_write_x=94
 enam1_write_x=118
 
@@ -60,8 +69,8 @@ init_sprites:.block
 ; Restore what's under the sprites, then draw them again from the
 ; current game state. Also redraw the scores if they've changed.
 ;
-; Drawing order follows TIA priority, lowest first: flies, frog 1,
-; frog 0. Restoring is in the reverse order.
+; Drawing order follows TIA priority, lowest first: tongue, flies,
+; frog 1, frog 0. Restoring is in the reverse order.
 ;-------------------------------------------------------------------------
 
 render_frame:.block
@@ -73,7 +82,10 @@ render_frame:.block
                 jsr restore_sprite
                 ldx #sprite_fly0
                 jsr restore_sprite
+                ldx #sprite_tongue
+                jsr restore_sprite
 
+                jsr draw_tongue
                 ldx #sprite_fly0
                 jsr draw_fly
                 ldx #sprite_fly1
@@ -252,6 +264,97 @@ got_size:
 
                 ldx #0          ; not reflected
                 ldy #role_frog1
+                lda sprite_x
+                jmp draw_sprite
+done:
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Tongue kernel line, or C=1 if there's no tongue to draw.
+;
+; Exit: C=0, A = kernel line (1-73) if there's a tongue
+;-------------------------------------------------------------------------
+
+get_tongue_kernel_line:.block
+                lda tongue_pl_y
+                sec
+                sbc #3
+                beq none
+                bcc none
+                cmp #74
+                rts             ; C=0 if <74
+none:
+                sec
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Set tongue_colour to COLUPF for the tongue's band. (On the 2600
+; COLUPF for kernel line y is set at the start of the line below, so
+; the tongue's two lines are mostly the colour of the band of kernel
+; line y+1, i.e. PF row y+11.)
+;-------------------------------------------------------------------------
+
+set_tongue_colour:.block
+                jsr get_tongue_kernel_line
+                bcs done
+                clc
+                adc #11
+                tax
+                ldy pf_row_bands,x
+                lda byte_9C,y
+                sta tongue_colour
+done:
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+draw_tongue:.block
+                ldx #sprite_tongue
+                stx sprite_index
+                lda #0
+                sta saved_rows,x
+
+                jsr get_tongue_kernel_line
+                bcs done
+                asl a
+                eor #$ff
+                sec
+                adc #168        ; A=168-2*y = S1 of kernel line y
+                sta sprite_line
+
+                lda #<fly_data
+                sta sprite_data+0
+                lda #>fly_data
+                sta sprite_data+1
+                lda #tongue_top
+                sta sprite_data_offset
+                lda #tongue_rows
+                sta sprite_rows
+                lda #4
+                sta sprite_width_cols
+
+                ; The TIA wraps at 160.
+                lda tongue_x
+                cmp #160
+                bcc +
+                sbc #160
++
+                sta sprite_x
+
+                ; One line higher if right of the ENABL write.
+                cmp #enabl_write_x
+                bcc +
+                dec sprite_line
++
+                ldx #sprite_tongue
+                jsr clip_sprite
+                beq done
+
+                ldx #0          ; not reflected
+                ldy #role_tongue
                 lda sprite_x
                 jmp draw_sprite
 done:
@@ -587,18 +690,20 @@ restore_cols_entries:=[restore_sprite.restore_col_entry_0,restore_sprite.restore
 restore_cols_entries_lo:.byte <restore_cols_entries
 restore_cols_entries_hi:.byte >restore_cols_entries
 
-; Save buffers: frogs need up to 18 rows, flies up to 6.
+; Save buffers: frogs need up to 18 rows, flies up to 6, the tongue 2.
 save_buffer_offsets:
                 .byte 0
                 .byte frog_rows*sprite_max_cols
                 .byte 2*frog_rows*sprite_max_cols
                 .byte 2*frog_rows*sprite_max_cols+fly_rows*sprite_max_cols
-save_buffers_size=2*frog_rows*sprite_max_cols+2*fly_rows*sprite_max_cols
+                .byte 2*frog_rows*sprite_max_cols+2*fly_rows*sprite_max_cols
+save_buffers_size=2*frog_rows*sprite_max_cols+2*fly_rows*sprite_max_cols+tongue_rows*sprite_max_cols
                 .cerror save_buffers_size>256
 
 ;-------------------------------------------------------------------------
 
-; Fly shapes, as sprite data (top row at the highest address).
+; Fly and tongue shapes, as sprite data (top row at the highest
+; address).
 fly_data:
                 .byte 0
 fly_wide_top=*-fly_data+fly_wide_rows-1
@@ -608,3 +713,5 @@ fly_narrow_top=*-fly_data+fly_narrow_rows-1
 fly_narrow_rows=6
                 .fill fly_narrow_rows,%11000000
                 .cerror fly_narrow_rows!=fly_rows
+tongue_top=*-fly_data+tongue_rows-1
+                .fill tongue_rows,%11111111

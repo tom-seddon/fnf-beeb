@@ -55,6 +55,22 @@ role_sources:
                 .byte byte_87           ; role_score_bg
                 .cerror *-role_sources!=num_dynamic_roles
 
+; The same, when prepare_display has swapped the BG and PF colours.
+role_sources_swapped:
+                .byte byte_9C           ; role_sky
+                .byte byte_9C+3         ; role_water
+                .byte byte_98           ; role_tree
+                .byte byte_98+1         ; role_khaki
+                .byte byte_98+2         ; role_lily
+                .byte COLUP0            ; role_frog0
+                .byte COLUP1            ; role_frog1
+                .byte COLUP1            ; role_spare
+                .byte tongue_colour     ; role_tongue
+                .byte pl_colours        ; role_score0
+                .byte pl_colours+1      ; role_score1
+                .byte byte_87           ; role_score_bg
+                .cerror *-role_sources_swapped!=num_dynamic_roles
+
 ;-------------------------------------------------------------------------
 
 ; Each byte with its bits in reverse order, for reflected sprites.

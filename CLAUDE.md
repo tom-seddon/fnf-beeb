@@ -5,8 +5,8 @@
   complete.
 - `make` must always pass. It checks that both 2600 ROMs (NTSC and
   PAL) reassemble byte-for-byte. Any change to shared code
-  (`src/logic.s65`, `src/sound.s65`, `src/ram.s65`, `src/data_*.s65`)
-  must keep the ROMs identical. Use `.if TARGET==...` for
+  (`src/logic.s65`, `src/prepare_display.s65`, `src/sound.s65`,
+  `src/ram.s65`, `src/data_*.s65`) must keep the ROMs identical. Use `.if TARGET==...` for
   platform-specific differences.
 - `make VERBOSE=1` shows the commands. The build is silent by default.
 - Running the BBC version: b2 runs on the same Mac with its HTTP server

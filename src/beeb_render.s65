@@ -71,9 +71,25 @@ init_palette:.block
 ;-------------------------------------------------------------------------
 
 update_palette:.block
+                ; When the 2600 code inverts the playfield
+                ; (pf_eor_value=$ff), it swaps the BG and PF colours
+                ; too, so the picture looks the same. The BBC picture
+                ; isn't inverted, so read the colours swapped back.
+                ldy #0
+                lda pf_eor_value
+                beq +
+                ldy #num_dynamic_roles
++
+                sty palette_sources_offset
+
                 ldx #num_dynamic_roles-1
 -
-                ldy role_sources,x
+                txa
+                clc
+                adc palette_sources_offset
+                tay
+                lda role_sources,y
+                tay
                 lda $0000,y
                 cmp role_colours,x
                 beq +
