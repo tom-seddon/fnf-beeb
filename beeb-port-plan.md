@@ -542,8 +542,13 @@ Milestone 2 notes:
 - CPU jumps (state 7) always land on a pad. Only a player's jump
   (state 2) can splash. Splash (states 3-5) checked by poking a frog
   into a player jump over the water.
-- b2's `screenshot` lags RAM by a few frames, so compare screenshots
-  with RAM only when the game state is steady.
+- b2's `screenshot` shows the state from 1-2 frames before a RAM
+  peek taken at the same time (the frame shows the state before that
+  frame's logic, plus the frame being scanned out). Compare
+  screenshots with RAM only when the game state is steady, or allow
+  for that. With b2 set to draw fewer frames when it's in the
+  background, screenshots can be much staler (a third of a second or
+  more): b2 must be set to draw every frame for these checks.
 
 Milestone 3 notes:
 - Split into three steps, each tested and committed separately:
