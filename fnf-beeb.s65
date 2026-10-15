@@ -62,6 +62,7 @@ sprite_row_selector_table=0
                 .include "src/beeb_render.s65"
                 .include "src/beeb_sprites.s65"
                 .include "src/beeb_input.s65"
+                .include "src/beeb_sound.s65"
                 .include "src/beeb_tables.s65"
 
 ;-------------------------------------------------------------------------

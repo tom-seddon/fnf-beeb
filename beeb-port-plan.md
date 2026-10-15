@@ -433,7 +433,8 @@ Stella.
    *Done when:* a full game runs from start through the end sequence,
    and a game left idle plays itself.
 5. **Later (not first pass):**
-   - sound: shadow AUDC/AUDF/AUDV → SN76489 once per frame
+   - sound: shadow AUDC/AUDF/AUDV → SN76489 once per frame (done, see
+     Milestone 5 notes)
    - dithering / VideoNuLA palette
    - tearing
    - 6:5 NTSC speed option
@@ -645,6 +646,28 @@ Milestone 4 notes:
   vanished against the sky and the left score was invisible. Greys
   now map to white unless almost black (see Decisions), so frog 0 and
   the left score are white all game.
+
+Milestone 5 notes:
+- Sound (`src/beeb_sound.s65`, tables from `tools/make_sn_tables.py`):
+  once a frame, after `update_sounds`, the TIA shadows (AUDC/AUDF/AUDV
+  0-1) are converted to SN76489 settings and any changed registers
+  written (System VIA, interrupts off). TIA channel c -> SN tone
+  channel c; TIA noise -> SN white noise clocked by tone channel 2
+  (kept silent) at the TIA's poly shift rate, the louder noise
+  winning if both channels are noise. Volume: linear AUDV -> 2dB
+  attenuation steps. Pitches use the NTSC TIA audio clock.
+- The game only uses AUDC 4 (pure tone, /2: croaks, end sound), 6
+  (pure tone, /31: eating a fly, end sound) and 8 (9-bit poly noise:
+  tongue, splash).
+- The SN76489 can't go below ~122Hz (period 1023 at 4MHz/32), and
+  AUDC 6 goes down to ~31Hz, so low notes go up an octave at a time.
+  In the eat sound that's the first two steps (AUDF 9, 8), so the sweep
+  jumps down an octave after them; more of the end sound is shifted.
+  An alternative for low notes would be the noise channel's periodic
+  mode (tone 2 frequency/15), which can go much lower.
+- Checked in b2 by logging the TIA shadows against the SN76489 values
+  written: tongue (noise) and eating a fly (tone) convert as
+  intended. Listened to in b2: sounds good.
 
 Tooling:
 - `make run` builds and runs the `.ssd` in b2. `make screenshot`

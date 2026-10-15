@@ -1,0 +1,224 @@
+;-------------------------------------------------------------------------
+; Sound (BBC only).
+;
+; Once a frame, turn the TIA sound register shadows (AUDC0/1, AUDF0/1,
+; AUDV0/1, written by the shared sound code) into SN76489 settings,
+; and write whichever SN76489 registers have changed.
+;
+; TIA channel c plays on SN76489 tone channel c. TIA noise plays on the
+; noise channel, as white noise clocked by tone channel 2 (which is
+; kept silent); if both TIA channels are noise, the louder one wins.
+; The kinds of sound and the tables are in tools/make_sn_tables.py.
+;-------------------------------------------------------------------------
+
+; SN76489 channels.
+sn_tone0=0
+sn_tone1=1
+sn_tone2=2
+sn_noise=3
+
+; Noise control: white noise, clocked by tone channel 2.
+sn_noise_control=%11100111
+
+;-------------------------------------------------------------------------
+; Silence everything, and make the next update_sound_chip write every
+; register.
+;-------------------------------------------------------------------------
+
+init_sound:.block
+                lda #0
+                ldx #1
+-
+                sta AUDC0,x
+                sta AUDF0,x
+                sta AUDV0,x
+                dex
+                bpl -
+
+                ldx #sn_noise
+-
+                lda #15
+                sta sn_attens,x
+                lda #$ff        ; never a valid setting
+                sta sn_written_attens,x
+                dex
+                bpl -
+                ldx #sn_tone2
+-
+                lda #$ff
+                sta sn_written_periods_hi,x
+                lda #0
+                sta sn_periods_lo,x
+                sta sn_periods_hi,x
+                dex
+                bpl -
+
+                lda #sn_noise_control
+                jsr sn_write
+                jmp update_sound_chip
+                .endblock
+
+;-------------------------------------------------------------------------
+
+update_sound_chip:.block
+                lda #15
+                sta sn_attens+sn_tone0
+                sta sn_attens+sn_tone1
+                sta sn_attens+sn_tone2
+                sta sn_attens+sn_noise
+
+                ldx #1
+channel_loop:
+                ; Volume.
+                lda AUDV0,x
+                and #15
+                tay
+                lda audv_attenuations,y
+                cmp #15
+                beq next        ; silent
+                sta channel_atten
+
+                ; Kind of sound.
+                lda AUDC0,x
+                and #15
+                tay
+                lda audc_kinds,y
+                beq next        ; silent
+                sta channel_kind
+
+                ; Period: tia_sn_periods_lo/hi[kind*32+AUDF].
+                asl a
+                asl a
+                asl a
+                asl a
+                asl a
+                sta channel_index
+                lda AUDF0,x
+                and #31
+                ora channel_index
+                tay
+
+                lda channel_kind
+                cmp #sound_kind_noise
+                beq noise
+
+                ; Tone, on the SN76489 tone channel with the same number.
+                lda tia_sn_periods_lo,y
+                sta sn_periods_lo,x
+                lda tia_sn_periods_hi,y
+                sta sn_periods_hi,x
+                lda channel_atten
+                sta sn_attens,x
+                jmp next
+
+noise:
+                ; Noise, if it's louder than any noise already chosen.
+                lda channel_atten
+                cmp sn_attens+sn_noise
+                bcs next
+                sta sn_attens+sn_noise
+                lda tia_sn_periods_lo,y
+                sta sn_periods_lo+sn_tone2
+                lda tia_sn_periods_hi,y
+                sta sn_periods_hi+sn_tone2
+
+next:
+                dex
+                bpl channel_loop
+
+                ; Write the periods that have changed.
+                ldx #sn_tone2
+period_loop:
+                lda sn_periods_lo,x
+                cmp sn_written_periods_lo,x
+                bne +
+                lda sn_periods_hi,x
+                cmp sn_written_periods_hi,x
+                beq period_next
++
+                lda sn_periods_lo,x
+                sta sn_written_periods_lo,x
+                lda sn_periods_hi,x
+                sta sn_written_periods_hi,x
+
+                ; Latch byte: %1 cc 0 pppp (period bits 0-3).
+                txa
+                asl a
+                asl a
+                asl a
+                asl a
+                asl a
+                ora #$80
+                sta channel_index
+                lda sn_periods_lo,x
+                and #$0f
+                ora channel_index
+                jsr sn_write
+
+                ; Data byte: %0 x pppppp (period bits 4-9).
+                lda sn_periods_hi,x
+                sta channel_index
+                lda sn_periods_lo,x
+                lsr channel_index
+                ror a
+                lsr channel_index
+                ror a
+                lsr a
+                lsr a
+                jsr sn_write
+period_next:
+                dex
+                bpl period_loop
+
+                ; Write the attenuations that have changed.
+                ldx #sn_noise
+atten_loop:
+                lda sn_attens,x
+                cmp sn_written_attens,x
+                beq atten_next
+                sta sn_written_attens,x
+
+                ; %1 cc 1 aaaa
+                txa
+                asl a
+                asl a
+                asl a
+                asl a
+                asl a
+                ora #$90
+                ora sn_attens,x
+                jsr sn_write
+atten_next:
+                dex
+                bpl atten_loop
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Write a byte to the SN76489, through the System VIA and the
+; addressable latch, with interrupts off (the OS's keyboard scanning
+; uses the same port).
+;
+; Entry: A = byte
+; Exit: X, Y preserved
+;-------------------------------------------------------------------------
+
+sn_write:.block
+                php
+                sei
+                pha
+                lda #$ff
+                sta system_via.ddra
+                pla
+                sta system_via.ora_no_handshake
+                lda #0          ; sound write enable (latch bit 0) low
+                sta system_via.orb
+                pha             ; hold it for 8us+
+                pla
+                pha
+                pla
+                lda #8          ; and high again
+                sta system_via.orb
+                plp
+                rts
+                .endblock

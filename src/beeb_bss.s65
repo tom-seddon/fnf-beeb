@@ -64,3 +64,14 @@ drawn_rows:     .fill 3
 drawn_xs:       .fill 3
 drawn_widths:   .fill 3
 fly_is_m0:      .fill 2         ; 1 if drawn by M0 this frame, 0 if M1
+
+; Sound: SN76489 settings wanted this frame, and as last written.
+sn_periods_lo:  .fill 3         ; tone channels 0-2
+sn_periods_hi:  .fill 3
+sn_attens:      .fill 4         ; tone channels 0-2, noise
+sn_written_periods_lo:.fill 3
+sn_written_periods_hi:.fill 3
+sn_written_attens:.fill 4
+channel_atten:  .fill 1
+channel_kind:   .fill 1
+channel_index:  .fill 1

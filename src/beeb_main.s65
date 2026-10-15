@@ -42,6 +42,7 @@ game_start:
                 jsr handle_players_inputs
                 jsr initialise_memory
 
+                jsr init_sound
                 jsr init_palette
                 jsr prepare_display
                 jsr update_palette
@@ -99,6 +100,7 @@ main_loop:
                 jsr sub_F8F0
                 jsr sub_FA7E
                 jsr update_sounds
+                jsr update_sound_chip
                 jmp main_loop
 
 ; Time from vsync to the beam passing the last line sprites can be on,
