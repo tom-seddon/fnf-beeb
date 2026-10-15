@@ -17,5 +17,17 @@
   body), `peek/b2/BEGIN/END`, `poke/b2/ADDR`, and `screenshot/b2`
   (returns a PNG of the display; `make screenshot` saves it to
   `build/beeb-screen.png`).
+- For testing in b2, use `tools/b2.py` rather than ad hoc scripts.
+  From the command line: `run`, `state` (frogs, flies, scores, time of
+  day, render time), `peek`/`poke` (label names like `pl_xs+1` work),
+  `patch-call NAME` (NOP out main_loop's `jsr NAME`), `step-time`,
+  `screenshot`, `show Y0 Y1` (print screen lines as characters). As a
+  module (`sys.path.append('tools'); import b2`), `B2()` has the same
+  and more, plus `load_screen`/`find_colour` for screenshots. Its
+  header comment has recipes: driving inputs by patching out
+  `scan_keyboard` and poking SWCHA/INPT4, freezing the flies, parking
+  a frog, skipping ahead in time of day. It reads addresses from the
+  last build, so `make` first. b2 must be set to draw every frame, and
+  screenshots trail a peek by 1-2 frames.
 - Target: BBC Model B with DFS, OS kept running, 160x192 MODE 2 screen
   at &4400.

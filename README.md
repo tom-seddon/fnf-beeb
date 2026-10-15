@@ -66,5 +66,6 @@ A frog left idle is taken over by the computer.
   builds (`prepare_display.s65` has its TIA parts in `.if
   TARGET==TARGET_2600` blocks)
 * `src/tia*.s65`, `src/riot.s65` - 2600 only
-* `tools/` - Python scripts for examining the ROM data
+* `tools/` - Python scripts for examining the ROM data, building, and
+  testing the BBC version in b2 (`tools/b2.py`)
 * `beeb/0` - BBC-side experiments (BeebLink volume)
