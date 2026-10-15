@@ -482,8 +482,8 @@ To revisit once the game is running:
 | 0. Refactor, 2600 still byte-exact | done (3dec04f) |
 | 1. Beeb skeleton | done (d747ef5, checked against Stella) |
 | 2. Logic transplant + frogs | done (439dc8a, 0e92285; keyboard play tested) |
-| 3. Flies, tongue, collision, score | in progress: flies and tongue done |
-| 4. The rest of the game | |
+| 3. Flies, tongue, collision, score | done (f373ba7, 679d89e, and this; play tested) |
+| 4. The rest of the game | next |
 
 Milestone 1 notes:
 - `fnf-beeb.s65` assembles the shared code unchanged. Only `VDELP1`,
@@ -588,6 +588,18 @@ Milestone 3 notes:
   frog's tongue hardly shows over a pad, as on the 2600. Fire checked
   by poking INPT4 with a frog parked mid-air: tongue out for ~0.36s,
   both facings, both sides of x 70.
+- Collision (step 3): `sub_F6BE` is unchanged. After drawing,
+  `check_collisions` tests the tongue's rectangle against each fly's
+  (as drawn, after clipping) and sets bit 6 of CXM0FB or CXM1FB for
+  whichever missile drew that fly, like the TIA latch. `sub_F6BE`
+  then maps it back to a fly with `eor byte_B3`, skips hits over the
+  frog's body, adds 2 to the score and resets the fly, as on the
+  2600. To keep the tongue and frogs from the same frame, the main
+  loop now runs `sub_F6BE` and `prepare_display` just before drawing
+  (previously the tongue was drawn a frame behind the frogs).
+  Checked by poking: hits score 2 with fire in pro mode, and
+  automatically in amateur mode; no hit over the frog's body, out of
+  reach, or two lines off. Attract mode scores by itself.
 - Render timing, measured properly now with User VIA T2 (the T1-based
   figures in milestone 2 were too low: when rendering ran past vsync,
   the vsync event restarted T1 mid-render): 4.4-9.6ms with two frogs
@@ -596,7 +608,9 @@ Milestone 3 notes:
   The deadline for something on the top sprite line (22) is then
   ~10.6ms; flies are drawn first, and frogs, drawn last, are rarely
   above line 71 (deadline ~13.8ms). Flies only save and draw the byte
-  columns they need (1-3). Still worth watching as more is drawn.
+  columns they need (1-3). Still worth watching as more is drawn:
+  with the tongue the worst seen is 10.7ms, just over the line 22
+  deadline (only a sprite that high and drawn late would be caught).
 - Not copied: a missile straddling its write point is split into a
   staircase on the 2600; the BBC treats the whole fly by its left edge.
   And ENAM isn't cleared when the kernel loop ends, so on the 2600 a

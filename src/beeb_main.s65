@@ -36,6 +36,9 @@ game_start:
 
                 lda system_via.t1c_l
                 sta random_seed
+                lda #0          ; no collisions
+                sta CXM0FB
+                sta CXM1FB
                 jsr handle_players_inputs
                 jsr initialise_memory
 
@@ -46,17 +49,21 @@ game_start:
                 jsr draw_background
                 jsr draw_scores
 
-; Same order as the 2600 main loop. Sprites are erased and redrawn in
-; place, so to avoid the beam catching a sprite half drawn (or not
-; drawn at all), render_frame runs once the beam has passed the last
-; line sprites can be on. The vsync event starts User VIA T1 to time
-; out then.
+; Same order as the 2600 main loop: sub_F6BE (collision, from the
+; frame just drawn), prepare_display, draw the frame, then the logic.
+; Sprites are erased and redrawn in place, so to avoid the beam
+; catching a sprite half drawn (or not drawn at all), the frame is
+; drawn once the beam has passed the last line sprites can be on. The
+; vsync event starts User VIA T1 to time out then.
 main_loop:
                 lda #$40
 -
                 bit user_via.ifr
                 beq -
                 lda user_via.t1c_l ; acknowledge
+
+                jsr sub_F6BE    ; reads CXM0FB/CXM1FB from render_frame
+                jsr prepare_display
 
                 ; Time the render with T2. (Not T1: if rendering runs
                 ; past vsync, the vsync event restarts T1.)
@@ -83,8 +90,6 @@ main_loop:
                 bcs +
                 jmp game_start
 +
-                jsr sub_F6BE    ; TODO: software collision (milestone 3)
-                jsr prepare_display
                 inc byte_B3
                 jsr handle_players_inputs
                 jsr update_player_physics

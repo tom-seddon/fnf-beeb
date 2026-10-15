@@ -56,3 +56,11 @@ tongue_pl_y:    .fill 1         ; pl_y of its frog, or 0 if none
 tongue_x:       .fill 1
 
 palette_sources_offset:.fill 1
+
+; Where the flies and tongue were drawn this frame (index: sprite slot
+; minus sprite_fly0), for check_collisions. drawn_rows=0 if not drawn.
+drawn_lines:    .fill 3
+drawn_rows:     .fill 3
+drawn_xs:       .fill 3
+drawn_widths:   .fill 3
+fly_is_m0:      .fill 2         ; 1 if drawn by M0 this frame, 0 if M1

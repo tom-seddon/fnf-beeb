@@ -95,6 +95,8 @@ render_frame:.block
                 ldx #sprite_frog0
                 jsr draw_frog
 
+                jsr check_collisions
+
                 lda pl_scores+0
                 cmp drawn_scores+0
                 bne +
@@ -176,6 +178,7 @@ draw_fly:.block
                 stx sprite_index
                 lda #0
                 sta saved_rows,x
+                sta drawn_rows-sprite_fly0,x
                 lda #<fly_data
                 sta sprite_data+0
                 lda #>fly_data
@@ -189,6 +192,7 @@ draw_fly:.block
                 tay             ; Y=fly index
                 eor byte_B3
                 and #1          ; 1=M0, 0=M1
+                sta fly_is_m0,y
                 beq +
                 lda #enam0_write_x
                 bne ++
@@ -261,6 +265,7 @@ got_size:
                 ldx sprite_index
                 jsr clip_sprite
                 beq done
+                jsr record_drawn_rect
 
                 ldx #0          ; not reflected
                 ldy #role_frog1
@@ -316,6 +321,7 @@ draw_tongue:.block
                 stx sprite_index
                 lda #0
                 sta saved_rows,x
+                sta drawn_rows-sprite_fly0,x
 
                 jsr get_tongue_kernel_line
                 bcs done
@@ -352,6 +358,7 @@ draw_tongue:.block
                 ldx #sprite_tongue
                 jsr clip_sprite
                 beq done
+                jsr record_drawn_rect
 
                 ldx #0          ; not reflected
                 ldy #role_tongue
@@ -359,6 +366,96 @@ draw_tongue:.block
                 jmp draw_sprite
 done:
                 rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Record where a fly or the tongue is drawn, for check_collisions.
+;
+; Entry: X = sprite slot (sprite_fly0, sprite_fly1, sprite_tongue);
+;        sprite_line, sprite_rows (clipped), sprite_x,
+;        sprite_width_cols set up
+; Exit: X preserved
+;-------------------------------------------------------------------------
+
+record_drawn_rect:.block
+                lda sprite_line
+                sta drawn_lines-sprite_fly0,x
+                lda sprite_rows
+                sta drawn_rows-sprite_fly0,x
+                lda sprite_x
+                sta drawn_xs-sprite_fly0,x
+                lda sprite_width_cols
+                asl a           ; pixels (4 columns = 8 pixels)
+                sta drawn_widths-sprite_fly0,x
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Set the TIA's missile/ball collision latch shadows (CXM0FB/CXM1FB
+; bit 6) for the frame just drawn: does the tongue overlap a fly? On
+; the 2600 the latch is for the missile, and the flies swap missiles
+; every frame; sub_F6BE uses byte_B3 to map it back to a fly.
+;-------------------------------------------------------------------------
+
+check_collisions:.block
+                lda #0
+                sta CXM0FB
+                sta CXM1FB
+                lda drawn_rows+tongue_
+                beq done
+
+                ldx #fly0_
+loop:
+                lda drawn_rows,x
+                beq next
+
+                ; Lines overlap? tongue top < fly bottom+1, and fly
+                ; top < tongue bottom+1.
+                lda drawn_lines,x
+                clc
+                adc drawn_rows,x
+                cmp drawn_lines+tongue_
+                beq next
+                bcc next
+                lda drawn_lines+tongue_
+                clc
+                adc drawn_rows+tongue_
+                cmp drawn_lines,x
+                beq next
+                bcc next
+
+                ; Pixels overlap? The same for X.
+                lda drawn_xs,x
+                clc
+                adc drawn_widths,x
+                cmp drawn_xs+tongue_
+                beq next
+                bcc next
+                lda drawn_xs+tongue_
+                clc
+                adc drawn_widths+tongue_
+                cmp drawn_xs,x
+                beq next
+                bcc next
+
+                ; Hit: set the latch for this fly's missile.
+                lda #$40
+                ldy fly_is_m0,x
+                beq +
+                sta CXM0FB
+                bne next        ; always taken
++
+                sta CXM1FB
+next:
+                inx
+                cpx #fly1_+1
+                bne loop
+done:
+                rts
+
+fly0_=sprite_fly0-sprite_fly0
+fly1_=sprite_fly1-sprite_fly0
+tongue_=sprite_tongue-sprite_fly0
                 .endblock
 
 ;-------------------------------------------------------------------------
