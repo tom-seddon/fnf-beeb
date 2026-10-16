@@ -135,7 +135,17 @@ class B2:
             'frame':a('byte_B3'),'time_of_day':a('byte_B7'),'game_over':a('byte_B4'),
             'colup':[a('COLUP0'),a('COLUP1')],'pf_eor':a('pf_eor_value'),
             'render_us':self.peek_word('render_time'),
+            # Tearing instrumentation (see check_deadline, record_time).
+            'late_sprites':self.peek_word('late_sprites'),
+            'late_scores':self.peek_byte('late_scores'),
+            'worst_slack_us':signed16(self.peek_word('worst_slack')),
+            'frame_times_us':self._frame_times(),
         }
+
+    def _frame_times(self):
+        d=self.peek('frame_times',10)
+        return dict(zip(('after_keyboard','after_logic','end','scores_start','scores_end'),
+                        (d[i]|d[i+1]<<8 for i in range(0,10,2))))
 
     def step_time_of_day(self):
         """Make the next time-of-day step happen (within 64 frames), and
@@ -146,6 +156,8 @@ class B2:
             if self.peek_byte('byte_B7')!=old or self.peek_byte('byte_B4')!=0: return
             time.sleep(0.05)
         raise RuntimeError('time of day didn\'t change')
+
+def signed16(v): return v-0x10000 if v>=0x8000 else v
 
 # --- screenshots
 

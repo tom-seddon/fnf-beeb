@@ -62,18 +62,31 @@ init_sprites:.block
                 sta saved_rows,x
                 dex
                 bpl -
+
+                sta late_sprites+0
+                sta late_sprites+1
+                sta late_scores
+                lda #$ff
+                sta worst_slack+0
+                lda #$7f
+                sta worst_slack+1
                 rts
                 .endblock
 
 ;-------------------------------------------------------------------------
 ; Restore what's under the sprites, then draw them again from the
-; current game state. Also redraw the scores if they've changed.
+; current game state.
 ;
 ; Drawing order follows TIA priority, lowest first: tongue, flies,
 ; frog 1, frog 0. Restoring is in the reverse order.
 ;-------------------------------------------------------------------------
 
 render_frame:.block
+                lda #$ff
+                sta frame_slack+0
+                lda #$7f
+                sta frame_slack+1
+
                 ldx #sprite_frog0
                 jsr restore_sprite
                 ldx #sprite_frog1
@@ -86,26 +99,130 @@ render_frame:.block
                 jsr restore_sprite
 
                 jsr draw_tongue
+                ldx #sprite_tongue
+                jsr check_sprite_deadline
                 ldx #sprite_fly0
                 jsr draw_fly
+                ldx #sprite_fly0
+                jsr check_sprite_deadline
                 ldx #sprite_fly1
                 jsr draw_fly
+                ldx #sprite_fly1
+                jsr check_sprite_deadline
                 ldx #sprite_frog1
                 jsr draw_frog
+                ldx #sprite_frog1
+                jsr check_sprite_deadline
                 ldx #sprite_frog0
                 jsr draw_frog
+                ldx #sprite_frog0
+                jsr check_sprite_deadline
 
                 jsr check_collisions
 
-                lda pl_scores+0
-                cmp drawn_scores+0
+                ; Worst slack so far.
+                lda frame_slack+0
+                cmp worst_slack+0
+                lda frame_slack+1
+                sbc worst_slack+1
+                bvc +
+                eor #$80
++
+                bpl +
+                lda frame_slack+0
+                sta worst_slack+0
+                lda frame_slack+1
+                sta worst_slack+1
++
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Tearing instrumentation.
+;
+; Rendering starts as the beam passes line sprite_last_line+1 (T2 is
+; started then), so something whose top line is L must be drawn within
+; (312-(sprite_last_line+1)+L)*64us, or the beam gets there first.
+;
+; frame_slack: least time to spare for any sprite this frame, in us
+; (negative if late); worst_slack: least ever; late_sprites: number of
+; sprites drawn late; late_scores: number of score redraws that
+; weren't finished by the time the next frame's rendering was due
+; (see redraw_scores).
+;-------------------------------------------------------------------------
+
+check_sprite_deadline:.block
+                lda saved_rows,x
+                beq done
+                lda saved_lines,x
+                jsr check_deadline
+                bpl ++
+                stx last_late_slot
+                lda saved_lines,x
+                sta last_late_line
+                lda deadline_slack+0
+                sta last_late_slack+0
+                lda deadline_slack+1
+                sta last_late_slack+1
+                inc late_sprites+0
                 bne +
-                lda pl_scores+1
-                cmp drawn_scores+1
-                beq ++
+                inc late_sprites+1
 +
-                jsr draw_scores
+                lda deadline_slack+1 ; N=sign again
 +
+                ; frame_slack=min(frame_slack,slack)
+                lda deadline_slack+0
+                cmp frame_slack+0
+                lda deadline_slack+1
+                sbc frame_slack+1
+                bvc +
+                eor #$80
++
+                bpl done
+                lda deadline_slack+0
+                sta frame_slack+0
+                lda deadline_slack+1
+                sta frame_slack+1
+done:
+                rts
+                .endblock
+
+; Entry: A = top line
+; Exit: deadline_slack = time to spare in us; N set if negative; X, Y
+;       preserved
+check_deadline:.block
+deadline_base=(312-(sprite_last_line+1))*64
+                sta deadline_slack+1 ; temp
+                and #3
+                asl a
+                asl a
+                asl a
+                asl a
+                asl a
+                asl a
+                sta deadline_slack+0 ; line*64, low byte
+                lda deadline_slack+1
+                lsr a
+                lsr a
+                sta deadline_slack+1 ; line*64, high byte
+
+                ; Elapsed time is $ffff-T2, so the slack,
+                ; deadline_base+line*64-elapsed, is (mod $10000)
+                ; deadline_base+line*64+T2+1.
+                lda user_via.t2c_l
+                sec             ; +1
+                adc deadline_slack+0
+                sta deadline_slack+0
+                lda user_via.t2c_h
+                adc deadline_slack+1
+                sta deadline_slack+1
+                lda deadline_slack+0
+                clc
+                adc #<deadline_base
+                sta deadline_slack+0
+                lda deadline_slack+1
+                adc #>deadline_base
+                sta deadline_slack+1
                 rts
                 .endblock
 

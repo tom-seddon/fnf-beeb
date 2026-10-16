@@ -48,6 +48,7 @@ game_start:
                 jsr update_palette
                 jsr init_sprites
                 jsr draw_background
+                lda #3          ; both
                 jsr draw_scores
 
 ; Same order as the 2600 main loop: sub_F6BE (collision, from the
@@ -63,15 +64,15 @@ main_loop:
                 beq -
                 lda user_via.t1c_l ; acknowledge
 
-                jsr sub_F6BE    ; reads CXM0FB/CXM1FB from render_frame
-                jsr prepare_display
-
-                ; Time the render with T2. (Not T1: if rendering runs
-                ; past vsync, the vsync event restarts T1.)
+                ; Time from here with T2. (Not T1: if rendering runs
+                ; past vsync, the vsync event restarts T1.) The beam
+                ; is at line sprite_last_line+1 now.
                 lda #$ff
                 sta user_via.t2c_l
                 sta user_via.t2c_h
 
+                jsr sub_F6BE    ; reads CXM0FB/CXM1FB from render_frame
+                jsr prepare_display
                 jsr set_tongue_colour
                 jsr update_palette
                 jsr render_frame
@@ -86,6 +87,8 @@ main_loop:
                 sta render_time+1
 
                 jsr scan_keyboard
+                ldx #0
+                jsr record_time
                 lda SWCHB
                 lsr a           ; C=0 if reset pressed
                 bcs +
@@ -101,7 +104,88 @@ main_loop:
                 jsr sub_FA7E
                 jsr update_sounds
                 jsr update_sound_chip
+                ldx #2
+                jsr record_time
+                jsr redraw_scores
+                ldx #4
+                jsr record_time
                 jmp main_loop
+
+;-------------------------------------------------------------------------
+; Record the time since rendering started, in us, for checking frame
+; timing with tools/b2.py: frame_times+0 after the keyboard scan, +2
+; after the game logic, +4 at the end of the frame.
+;
+; Entry: X = offset into frame_times
+;-------------------------------------------------------------------------
+
+record_time:.block
+                lda user_via.t2c_l
+                eor #$ff
+                sta frame_times+0,x
+                lda user_via.t2c_h
+                eor #$ff
+                sta frame_times+1,x
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Redraw the scores if they've changed.
+;
+; The score area is at the top of the screen, where the beam gets to
+; soon after rendering starts, so this waits until the beam is past it
+; (T2 still counts from when rendering started), then has nearly a
+; frame before the beam comes back.
+;-------------------------------------------------------------------------
+
+redraw_scores:.block
+                ; Which have changed? Bit 0 = player 0, bit 1 =
+                ; player 1.
+                lda #0
+                sta scores_changed
+                lda pl_scores+0
+                cmp drawn_scores+0
+                beq +
+                lda #1
+                sta scores_changed
++
+                lda pl_scores+1
+                cmp drawn_scores+1
+                beq +
+                lda scores_changed
+                ora #2
+                sta scores_changed
++
+                lda scores_changed
+                beq done
+                ; Wait until T2<=$ffff-wait_us, i.e. that long since
+                ; rendering started (to within 256us).
+-
+                lda user_via.t2c_h
+                cmp #>($ffff-wait_us)
+                beq +
+                bcs -
++
+                ldx #6
+                jsr record_time
+                lda scores_changed
+                jsr draw_scores
+                ldx #8
+                jsr record_time
+
+                ; Late if the next frame's rendering should have
+                ; started by now.
+                lda user_via.t2c_h
+                cmp #>($ffff-frame_us)
+                bcs done
+                inc late_scores
+done:
+                rts
+
+; Beam at the line after the score area.
+wait_us=(312-(sprite_last_line+1)+score_area_end_line+1)*64
+frame_us=312*64
+                .endblock
 
 ; Time from vsync to the beam passing the last line sprites can be on,
 ; in us. Vsync is at character row 32 of 39 (CRTC R7, R4), i.e.

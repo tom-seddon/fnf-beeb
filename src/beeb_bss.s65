@@ -15,12 +15,13 @@ fg_byte:        .fill 1
 bg_byte:        .fill 1
 pf_bits:        .fill 1
 draw_line_x:    .fill 1
+draw_first_block:.fill 1
+draw_end_block: .fill 1
 digit_offsets:  .fill 4         ; p0 left, p0 right, p1 left, p1 right
 
 ; Input.
 difficulty_keys:.fill 1         ; bit 0 = f1 down, bit 1 = f2 down
 keys_temp:      .fill 1
-inkey_y:        .fill 1
 
 ; Scores currently on screen.
 drawn_scores:   .fill 2
@@ -75,3 +76,16 @@ sn_written_attens:.fill 4
 channel_atten:  .fill 1
 channel_kind:   .fill 1
 channel_index:  .fill 1
+
+; Tearing instrumentation (see check_deadline).
+frame_slack:    .fill 2
+worst_slack:    .fill 2
+late_sprites:   .fill 2
+late_scores:    .fill 1
+deadline_slack: .fill 2
+last_late_slot: .fill 1         ; details of the last late sprite
+last_late_line: .fill 1
+last_late_slack:.fill 2
+frame_times:    .fill 10        ; see record_time
+scores_changed: .fill 1
+scores_to_draw: .fill 1

@@ -20,6 +20,9 @@ blocks_per_line=40
 ; lines per row. That's 191 lines; the last is blank.
 score_digits_line=2
 score_digit_row_lines=3
+score_area_end_line=score_digits_line+5*score_digit_row_lines
+score0_first_block=4            ; PF1, left half
+score1_first_block=24           ; PF1, right half
 pf_line=21
 pf_row_lines=2
 pf_top_row=84
@@ -128,14 +131,11 @@ set_role_colour:.block
 ;-------------------------------------------------------------------------
 
 draw_background:.block
-                ; Blank score area lines.
+                ; Score area, blank. (draw_scores only draws the
+                ; blocks the digits are in.)
                 lda #role_score_bg
                 jsr fill_blocks
                 lda #0
-                jsr draw_line
-                lda #1
-                jsr draw_line
-                lda #pf_line-4
 -
                 pha
                 jsr draw_line
@@ -170,13 +170,16 @@ draw_background:.block
                 .endblock
 
 ;-------------------------------------------------------------------------
-; Draw both scores, from pl_scores.
+; Draw the scores, from pl_scores.
+;
+; Entry: A = which: bit 0 = player 0, bit 1 = player 1
 ;
 ; As on the 2600, they're PF1 data: player 0's in PF1 on the left half
 ; of the screen, player 1's in PF1 on the right half (not reflected).
 ;-------------------------------------------------------------------------
 
 draw_scores:.block
+                sta scores_to_draw
                 lda pl_scores+0
                 sta drawn_scores+0
                 lda pl_scores+1
@@ -220,25 +223,53 @@ digit_rows_loop:
                 ldx #role_score_bg
                 lda solid_bytes,x
                 sta bg_byte
-                jsr fill_blocks_with_bg_byte
 
+                ; Player 0.
+                lda scores_to_draw
+                lsr a
+                bcc +
                 ldx #role_score0
                 lda #0
                 jsr build_digit_blocks
+                lda #score0_first_block
+                jsr draw_digit_row_lines
++
+                ; Player 1.
+                lda scores_to_draw
+                and #2
+                beq +
                 ldx #role_score1
                 lda #2
                 jsr build_digit_blocks
-
-                ldx #score_digit_row_lines
--
+                lda #score1_first_block
+                jsr draw_digit_row_lines
++
                 lda line
-                jsr draw_line
-                inc line
-                dex
-                bne -
+                clc
+                adc #score_digit_row_lines
+                sta line
 
                 dec row
                 bpl digit_rows_loop
+                rts
+
+; Draw a digit row's lines, for one player.
+; Entry: A = first block (score0_first_block or score1_first_block)
+draw_digit_row_lines:
+                sta draw_first_block
+                clc
+                adc #8
+                sta draw_end_block
+                lda line
+                ldx #score_digit_row_lines
+-
+                pha
+                jsr draw_line_part
+                pla
+                clc
+                adc #1
+                dex
+                bne -
                 rts
 
 ; Entry: X = colour role; A = 2*player index
@@ -260,10 +291,10 @@ build_digit_blocks:
                 eor left_digits_pf_data,x
                 sta pf_bits
                 ; PF1 is blocks 4-11 on the left, 24-31 on the right.
-                lda #4
+                lda #score0_first_block
                 cpy #0
                 beq +
-                lda #24
+                lda #score1_first_block
 +
                 tay
                 ldx #8
@@ -389,19 +420,51 @@ put_block:.block
 ;-------------------------------------------------------------------------
 
 draw_line:.block
+                ldy #0
+                sty draw_first_block
+                ldy #blocks_per_line
+                sty draw_end_block
+                .endblock
+
+;-------------------------------------------------------------------------
+; Draw some of the blocks onto a screen line.
+;
+; Entry: A = screen line; draw_first_block, draw_end_block = blocks
+;        to draw (first, last+1)
+; Exit: X preserved
+;-------------------------------------------------------------------------
+
+draw_line_part:.block
                 stx draw_line_x
                 tax
-                lda line_addrs_lo,x
+
+                ; ptr = line address + first block*16 (2 bytes, 8 apart)
+                lda draw_first_block
+                sta ptr+1
+                lda #0
+                lsr ptr+1
+                ror a
+                lsr ptr+1
+                ror a
+                lsr ptr+1
+                ror a
+                lsr ptr+1
+                ror a           ; A:ptr+1 = first*16 (as hi:lo shifted)
+                clc
+                adc line_addrs_lo,x
                 sta ptr+0
+                lda ptr+1
+                adc line_addrs_hi,x
+                sta ptr+1
+                lda ptr+0
                 clc
                 adc #8
                 sta ptr2+0
-                lda line_addrs_hi,x
-                sta ptr+1
+                lda ptr+1
                 adc #0
                 sta ptr2+1
 
-                ldx #0
+                ldx draw_first_block
                 ldy #0
 -
                 lda blocks,x
@@ -416,7 +479,7 @@ draw_line:.block
                 inc ptr2+1
 +
                 inx
-                cpx #blocks_per_line
+                cpx draw_end_block
                 bne -
 
                 ldx draw_line_x

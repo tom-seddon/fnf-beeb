@@ -436,7 +436,7 @@ Stella.
    - sound: shadow AUDC/AUDF/AUDV → SN76489 once per frame (done, see
      Milestone 5 notes)
    - dithering / VideoNuLA palette
-   - tearing
+   - tearing (done, see Milestone 5 notes)
    - 6:5 NTSC speed option
    - title and instruction screen, key redefinition
    - Master considerations
@@ -669,6 +669,26 @@ Milestone 5 notes:
   jumps down an octave after them; more of the end sound is shifted.
   An alternative for low notes would be the noise channel's periodic
   mode (tone 2 frequency/15), which can go much lower.
+- Tearing: measured first. Every frame, `check_sprite_deadline` works
+  out each sprite's time to spare: rendering starts as the beam passes
+  line 168, so a sprite with top line L must be drawn within
+  (312-168+L)*64us. Results (`late_sprites`, `worst_slack`, also in
+  `tools/b2.py state`): no sprite was ever late in attract play, the
+  end sequence, or a stress test (both frogs and flies at the top),
+  with at least ~2.5ms to spare. The real tearing was the score
+  redraw, which ran after the sprites at the top of the screen, so
+  the beam always got to it first.
+- Fixes: the score redraw moved out of rendering to the end of the
+  main loop, and waits (T2) until the beam is past the score area, so
+  it has nearly a frame before the beam comes back. It only draws the
+  digit blocks, and only for a player whose score changed (~4.4ms,
+  done by ~14.7ms after rendering starts). The keyboard is now read
+  directly from the matrix through the System VIA (OS scanning paused,
+  interrupts off) instead of 13 OSBYTE &81 calls, which took ~5ms a
+  frame; now ~0.25-0.75ms including the buffer flush. `record_time`
+  logs where each frame's time goes (`frame_times`).
+- The direct keyboard reading can't be checked through b2's API (no
+  key presses): needs a keyboard play test.
 - Checked in b2 by logging the TIA shadows against the SN76489 values
   written: tongue (noise) and eating a fly (tone) convert as
   intended. Listened to in b2: sounds good.

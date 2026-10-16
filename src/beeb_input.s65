@@ -47,6 +47,15 @@ init_input:.block
 ;-------------------------------------------------------------------------
 
 scan_keyboard:.block
+                ; Read the keyboard matrix directly (much quicker than
+                ; OSBYTE &81): interrupts off, OS scanning paused.
+                php
+                sei
+                lda #$7f        ; port A bit 7 (key pressed) is input
+                sta system_via.ddra
+                lda #3          ; latch bit 3 (keyboard enable) low:
+                sta system_via.orb ; OS auto scan off
+
                 ; Joysticks.
                 ldy #0
 -
@@ -103,6 +112,10 @@ scan_keyboard:.block
                 sta SWCHB
 +
 
+                lda #$0b        ; OS auto scan on again
+                sta system_via.orb
+                plp
+
                 ; Stop the keyboard buffer filling up.
                 lda #21
                 ldx #0
@@ -110,20 +123,19 @@ scan_keyboard:.block
                 .endblock
 
 ;-------------------------------------------------------------------------
-; Read a key.
+; Read a key, from the keyboard matrix. scan_keyboard sets the System
+; VIA up for this.
 ;
-; Entry: A = negative INKEY code
-; Exit: C=0 if pressed, C=1 if not; Y preserved
+; Entry: A = negative INKEY code, as a byte (the internal key number,
+;        row in bits 4-6 and column in bits 0-3, is that EOR $ff)
+; Exit: C=0 if pressed, C=1 if not; X, Y preserved
 ;-------------------------------------------------------------------------
 
 read_key:.block
-                sty inkey_y
-                tax
-                ldy #$ff
-                lda #$81
-                jsr osbyte      ; X=$ff if pressed, else 0
-                inx             ; X=0 if pressed
-                cpx #1          ; C=0 if pressed
-                ldy inkey_y
+                eor #$ff
+                sta system_via.ora_no_handshake
+                lda system_via.ora_no_handshake ; bit 7 set if pressed
+                eor #$80
+                asl a           ; C=0 if pressed
                 rts
                 .endblock
