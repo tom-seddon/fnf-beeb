@@ -688,7 +688,8 @@ Milestone 5 notes:
   frame; now ~0.25-0.75ms including the buffer flush. `record_time`
   logs where each frame's time goes (`frame_times`).
 - The direct keyboard reading can't be checked through b2's API (no
-  key presses): needs a keyboard play test.
+  key presses); play tested by keyboard instead: the keys work as
+  before.
 - Checked in b2 by logging the TIA shadows against the SN76489 values
   written: tongue (noise) and eating a fly (tone) convert as
   intended. Listened to in b2: sounds good.
