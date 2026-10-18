@@ -56,6 +56,8 @@ enam1_write_x=118
 ;-------------------------------------------------------------------------
 
 init_sprites:.block
+                lda #sprite_frog1
+                sta frog_first
                 lda #0
                 ldx #num_sprites-1
 -
@@ -78,7 +80,9 @@ init_sprites:.block
 ; current game state.
 ;
 ; Drawing order follows TIA priority, lowest first: tongue, flies,
-; frog 1, frog 0. Restoring is in the reverse order.
+; frog 1, frog 0, except that the frogs can go the other way round
+; when they don't overlap (see choose_frog_order). Restoring is in the
+; reverse of the previous frame's order.
 ;-------------------------------------------------------------------------
 
 render_frame:.block
@@ -87,9 +91,12 @@ render_frame:.block
                 lda #$7f
                 sta frame_slack+1
 
-                ldx #sprite_frog0
+                ; Frogs in the reverse of the order they were drawn.
+                lda frog_first
+                eor #1
+                tax
                 jsr restore_sprite
-                ldx #sprite_frog1
+                ldx frog_first
                 jsr restore_sprite
                 ldx #sprite_fly1
                 jsr restore_sprite
@@ -109,13 +116,18 @@ render_frame:.block
                 jsr draw_fly
                 ldx #sprite_fly1
                 jsr check_sprite_deadline
-                ldx #sprite_frog1
+                jsr choose_frog_order
+                ldx frog_first
                 jsr draw_frog
-                ldx #sprite_frog1
+                ldx frog_first
                 jsr check_sprite_deadline
-                ldx #sprite_frog0
+                lda frog_first
+                eor #1
+                tax
                 jsr draw_frog
-                ldx #sprite_frog0
+                lda frog_first
+                eor #1
+                tax
                 jsr check_sprite_deadline
 
                 jsr check_collisions
@@ -133,6 +145,16 @@ render_frame:.block
                 sta worst_slack+0
                 lda frame_slack+1
                 sta worst_slack+1
+                lda frame_slack_slot
+                sta worst_slot
+                lda frame_slack_line
+                sta worst_line
+                ldx #size(frame_times)-1
+-
+                lda frame_times,x
+                sta worst_frame_times,x
+                dex
+                bpl -
 +
                 rts
                 .endblock
@@ -142,7 +164,9 @@ render_frame:.block
 ;
 ; Rendering starts as the beam passes line sprite_last_line+1 (T2 is
 ; started then), so something whose top line is L must be drawn within
-; (312-(sprite_last_line+1)+L)*64us, or the beam gets there first.
+; (T-(sprite_last_line+1)+L)*64us, for T lines per frame, or the beam
+; gets there first (deadline_base_us is the first part; see
+; set_video_mode).
 ;
 ; frame_slack: least time to spare for any sprite this frame, in us
 ; (negative if late); worst_slack: least ever; late_sprites: number of
@@ -152,6 +176,16 @@ render_frame:.block
 ;-------------------------------------------------------------------------
 
 check_sprite_deadline:.block
+                txa
+                asl a
+                adc #12
+                tay
+                lda user_via.t2c_l
+                eor #$ff
+                sta frame_times+0,y
+                lda user_via.t2c_h
+                eor #$ff
+                sta frame_times+1,y
                 lda saved_rows,x
                 beq done
                 lda saved_lines,x
@@ -183,6 +217,9 @@ check_sprite_deadline:.block
                 sta frame_slack+0
                 lda deadline_slack+1
                 sta frame_slack+1
+                stx frame_slack_slot
+                lda saved_lines,x
+                sta frame_slack_line
 done:
                 rts
                 .endblock
@@ -191,7 +228,6 @@ done:
 ; Exit: deadline_slack = time to spare in us; N set if negative; X, Y
 ;       preserved
 check_deadline:.block
-deadline_base=(312-(sprite_last_line+1))*64
                 sta deadline_slack+1 ; temp
                 and #3
                 asl a
@@ -207,8 +243,8 @@ deadline_base=(312-(sprite_last_line+1))*64
                 sta deadline_slack+1 ; line*64, high byte
 
                 ; Elapsed time is $ffff-T2, so the slack,
-                ; deadline_base+line*64-elapsed, is (mod $10000)
-                ; deadline_base+line*64+T2+1.
+                ; deadline_now_us+line*64-elapsed, is (mod $10000)
+                ; deadline_now_us+line*64+T2+1.
                 lda user_via.t2c_l
                 sec             ; +1
                 adc deadline_slack+0
@@ -218,11 +254,57 @@ deadline_base=(312-(sprite_last_line+1))*64
                 sta deadline_slack+1
                 lda deadline_slack+0
                 clc
-                adc #<deadline_base
+                adc deadline_now_us+0
                 sta deadline_slack+0
                 lda deadline_slack+1
-                adc #>deadline_base
+                adc deadline_now_us+1
                 sta deadline_slack+1
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Choose which frog to draw first (frog_first).
+;
+; Where the frogs overlap, frog 0 must be drawn last, so it's on top
+; (TIA priority). Otherwise the order doesn't matter to the picture,
+; so draw the higher one first: its deadline (the beam reaching its
+; top line) is sooner.
+;-------------------------------------------------------------------------
+
+choose_frog_order:.block
+                lda #sprite_frog1 ; priority order
+                sta frog_first
+
+                ; Overlap horizontally? (Both 8 pixels wide.)
+                lda pl_xs+0
+                sec
+                sbc pl_xs+1
+                bcs +
+                eor #$ff
+                adc #1
++
+                cmp #8
+                bcs apart
+
+                ; Overlap vertically? (Rows 171-2*pl_y..+17.)
+                lda pl_ys+0
+                sec
+                sbc pl_ys+1
+                bcs +
+                eor #$ff
+                adc #1
++
+                cmp #9
+                bcc done        ; overlapping
+
+apart:
+                ; Higher frog (larger pl_y) first.
+                lda pl_ys+1
+                cmp pl_ys+0
+                bcs done        ; frog 1 at least as high
+                lda #sprite_frog0
+                sta frog_first
+done:
                 rts
                 .endblock
 

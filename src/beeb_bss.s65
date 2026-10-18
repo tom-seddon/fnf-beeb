@@ -20,7 +20,7 @@ draw_end_block: .fill 1
 digit_offsets:  .fill 4         ; p0 left, p0 right, p1 left, p1 right
 
 ; Input.
-difficulty_keys:.fill 1         ; bit 0 = f1 down, bit 1 = f2 down
+toggle_keys:    .fill 1         ; bit 0 = f1 down, bit 1 = f2, bit 2 = f3
 keys_temp:      .fill 1
 
 ; Scores currently on screen.
@@ -57,6 +57,7 @@ tongue_pl_y:    .fill 1         ; pl_y of its frog, or 0 if none
 tongue_x:       .fill 1
 
 palette_sources_offset:.fill 1
+palette_temp:   .fill 1
 
 ; Where the flies and tongue were drawn this frame (index: sprite slot
 ; minus sprite_fly0), for check_collisions. drawn_rows=0 if not drawn.
@@ -86,6 +87,30 @@ deadline_slack: .fill 2
 last_late_slot: .fill 1         ; details of the last late sprite
 last_late_line: .fill 1
 last_late_slack:.fill 2
-frame_times:    .fill 10        ; see record_time
+frame_times:    .fill 12+2*num_sprites ; see record_time
+worst_frame_times:.fill 12+2*num_sprites ; frame_times for the worst slack
 scores_changed: .fill 1
 scores_to_draw: .fill 1
+
+; Video mode (see set_video_mode) and the timings that go with it.
+video_mode:     .fill 1
+requested_video_mode:.fill 1   ; f3 toggles this
+render_delay_us:.fill 2
+deadline_base_us:.fill 2
+score_wait_us:  .fill 2
+frame_us:       .fill 2
+
+; This frame's rendering start and timings (see choose_render_start,
+; set_frame_timings).
+vsync_count:    .fill 1
+render_start_line:.fill 1
+render_start_t1h:.fill 1
+render_offset:  .fill 2
+deadline_now_us:.fill 2
+score_wait_t2h: .fill 1
+frame_t2h:      .fill 1
+frame_slack_slot:.fill 1        ; sprite slot and top line of the
+frame_slack_line:.fill 1        ; least slack this frame...
+worst_slot:     .fill 1         ; ...and ever
+worst_line:     .fill 1
+frog_first:     .fill 1         ; frog drawn first (see choose_frog_order)

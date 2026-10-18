@@ -44,6 +44,12 @@ milestone/date where useful).
   output, or the picture's position/scale in the response; exposing
   the debugger's pixel metadata (address/time per pixel) would be even
   better. (M1)
+- [screenshot] With a 262-line (60Hz) frame, b2's output only refreshes
+  the first ~524 of its 576 rows; the rest keeps old content (a stale
+  copy of the picture's top), which looks like a second picture. A
+  screenshot can be partly stale with no indication. Wanted: unrefreshed
+  areas cleared, or the screenshot cropped to what the TV drew last
+  frame. (M5)
 - [hardware state] No API to read CRTC/ULA/VIA registers. Palette had
   to come from the OS's copy at &36F (only right because VDU 19 was
   used). Wanted: device register dump endpoints (CRTC, video ULA
@@ -79,6 +85,14 @@ milestone/date where useful).
   by parsing the 64tass listing. Wanted: CPU register read/write, and
   breakpoints that can skip/return (or run a callback-like action).
   (M2-M5)
+
+- [status] No way to ask whether the emulator is running, paused or
+  stopped in the debugger. During the 60Hz work, `run` appeared to
+  succeed but memory stayed zero and the screenshot showed an old
+  frame; it took several peeks and a listing to rule out a code bug.
+  Wanted: a status endpoint (running/paused/stopped, PC, why stopped),
+  and `run`/`reset` reporting failure if the machine isn't running.
+  (M5)
 
 ## Configuration
 

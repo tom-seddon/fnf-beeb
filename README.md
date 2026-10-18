@@ -53,7 +53,10 @@ screenshot` to save its screen to `build/beeb-screen.png`.
 | Right frog | ↑ | ↓ | ← | → | Return |
 
 f0 resets the game. f1 and f2 toggle the left and right players'
-difficulty (amateur/pro), like the 2600's difficulty switches.
+difficulty (amateur/pro), like the 2600's difficulty switches. f3
+switches between 50Hz (the default; the game runs at the speed of the
+PAL 2600 cartridge) and 60Hz (the NTSC cartridge's speed), for displays
+that can sync to it.
 A frog left idle is taken over by the computer.
 
 # source layout

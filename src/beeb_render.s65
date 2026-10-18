@@ -107,6 +107,12 @@ update_palette:.block
 ;-------------------------------------------------------------------------
 ; Set the colour of a role.
 ;
+; Writes the video ULA palette directly: VDU 19 through the OS took up
+; to ~3ms for a frame's colour changes, eating into the time to render.
+; In MODE 2 each logical colour is one write, (logical<<4)|(physical
+; EOR 7). The OS's copy of the palette isn't updated, but nothing uses
+; it, and with no flashing colours the OS doesn't rewrite the palette.
+;
 ; Entry: X = role (logical colour); A = TIA colour
 ; Exit: X preserved
 ;-------------------------------------------------------------------------
@@ -114,16 +120,17 @@ update_palette:.block
 set_role_colour:.block
                 lsr a
                 tay
-                lda #19
-                jsr oswrch
-                txa
-                jsr oswrch
                 lda tia_to_beeb,y
-                jsr oswrch
-                lda #0
-                jsr oswrch
-                jsr oswrch
-                jmp oswrch
+                eor #7
+                sta palette_temp
+                txa
+                asl a
+                asl a
+                asl a
+                asl a
+                ora palette_temp
+                sta video_ula_palette
+                rts
                 .endblock
 
 ;-------------------------------------------------------------------------

@@ -437,7 +437,8 @@ Stella.
      Milestone 5 notes)
    - dithering / VideoNuLA palette
    - tearing (done, see Milestone 5 notes)
-   - 6:5 NTSC speed option
+   - NTSC speed: done as an optional 60Hz video mode rather than 6:5
+     frame repeating (see Milestone 5 notes)
    - title and instruction screen, key redefinition
    - Master considerations
    - a human-readable document on where b2's HTTP API fell short
@@ -480,6 +481,11 @@ Decided on 2026-10-15:
   white; only $00 is black. Frog 0 ($04) is therefore white rather
   than black, but it stays visible against the black night sky.
 - **No Electron version.** Dropped from the "later" list.
+
+Decided on 2026-10-18:
+- **NTSC speed** is an optional 60Hz video mode (f3), with the game
+  logic still once per frame. 50Hz stays the default: it runs at the
+  PAL cartridge's speed, which is authentic.
 
 To revisit once the game is running:
 - Fly colour.
@@ -690,6 +696,31 @@ Milestone 5 notes:
 - The direct keyboard reading can't be checked through b2's API (no
   key presses); play tested by keyboard instead: the keys work as
   before.
+- 60Hz mode (f3 toggles, play tested in b2; `requested_video_mode`
+  can be poked in tests): `set_video_mode` sets the CRTC vertical total to 262 lines
+  (R4=31, R5=6), vsync at row 27 (centres the picture), and the
+  timings that depend on them. 50Hz is 312 lines, vsync at row 32, as
+  before. Interlace is off in both, so every frame is the same length.
+  The game logic runs once per frame either way, so 60Hz is exactly
+  the NTSC cartridge's speed. b2's TV syncs to it; the picture is at
+  row 70 of b2's screenshot (90 at 50Hz), and below row ~524 b2 shows
+  stale junk (`tools/b2.py` knows both).
+- 60Hz only leaves 70 border lines to render in, against 120, so two
+  more changes were needed (they help 50Hz too):
+  - Palette writes go straight to the video ULA (&FE21) instead of
+    VDU 19, which took up to ~3ms in frames where colours changed.
+  - Rendering starts as soon as the beam has passed the lowest line
+    anything will be restored or drawn on (`choose_render_start`),
+    not always at line 168: often lines 100-140 when frogs are in the
+    air. T1 (from vsync) gives the beam position; a vsync count keeps
+    it to one render per frame; deadlines and the score redraw allow
+    for the earlier start.
+  - Also, when the frogs don't overlap, the higher one is drawn first
+    (`choose_frog_order`); restoring follows the previous frame's
+    order.
+- Result: worst time to spare 2.5-3ms at 60Hz (was down to -0.2ms,
+  frog 0 at the top of a jump), 5.7-6.2ms at 50Hz; nothing late in
+  attract play or the end sequence at either rate.
 - Checked in b2 by logging the TIA shadows against the SN76489 values
   written: tongue (noise) and eating a fly (tone) convert as
   intended. Listened to in b2: sounds good.

@@ -25,6 +25,7 @@ inkey_return=$100-74
 inkey_f0=$100-33
 inkey_f1=$100-114
 inkey_f2=$100-115
+inkey_f3=$100-116
 
 ; Keys making up SWCHA, from bit 7 down to bit 0.
 swcha_keys:
@@ -40,7 +41,7 @@ init_input:.block
                 lda #%00001011
                 sta SWCHB
                 lda #0
-                sta difficulty_keys
+                sta toggle_keys
                 rts
                 .endblock
 
@@ -82,21 +83,26 @@ scan_keyboard:.block
                 adc #0          ; bit 0 = C = ~reset
                 sta SWCHB
 
-                ; Difficulty switches toggle on each press of f1/f2.
+                ; Toggle keys, acting on each press: f1/f2 the
+                ; difficulty switches, f3 the video mode (50/60Hz).
+                lda #inkey_f3
+                jsr read_key
+                rol keys_temp
                 lda #inkey_f2
                 jsr read_key
                 rol keys_temp
                 lda #inkey_f1
                 jsr read_key
                 lda keys_temp
-                rol a           ; bit 1 = ~f2, bit 0 = ~f1
-                eor #3          ; bit 1 = f2, bit 0 = f1
-                and #3
+                rol a           ; bit 2 = ~f3, bit 1 = ~f2, bit 0 = ~f1
+                eor #7          ; bit 2 = f3, bit 1 = f2, bit 0 = f1
+                and #7
                 sta keys_temp
-                eor difficulty_keys ; bits set if changed...
-                and keys_temp       ; ...and now pressed
+                eor toggle_keys ; bits set if changed...
+                and keys_temp   ; ...and now pressed
                 ldx keys_temp
-                stx difficulty_keys
+                stx toggle_keys
+                sta keys_temp   ; newly pressed
                 lsr a           ; C=f1 newly pressed
                 bcc +
                 pha
@@ -115,6 +121,14 @@ scan_keyboard:.block
                 lda #$0b        ; OS auto scan on again
                 sta system_via.orb
                 plp
+
+                lda keys_temp
+                and #4          ; f3 newly pressed?
+                beq +
+                lda requested_video_mode
+                eor #1
+                sta requested_video_mode
++
 
                 ; Stop the keyboard buffer filling up.
                 lda #21

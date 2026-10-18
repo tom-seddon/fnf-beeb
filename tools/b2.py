@@ -32,8 +32,12 @@ sys.path.append(os.path.join(ROOT,'submodules/beeb/bin'))
 import png
 
 # BBC picture position and pixel size in a b2 screenshot (736x576).
+# The vertical position depends on the video mode (video_mode: 0 =
+# 50Hz, 1 = 60Hz). At 60Hz the frame only covers the first 524 rows;
+# b2 leaves junk below that.
 SHOT_X0=48
-SHOT_Y0=90
+SHOT_Y0S=(90,70)
+SHOT_Y0=SHOT_Y0S[0]
 SHOT_XS=4
 SHOT_YS=2
 WIDTH=160
@@ -135,10 +139,13 @@ class B2:
             'frame':a('byte_B3'),'time_of_day':a('byte_B7'),'game_over':a('byte_B4'),
             'colup':[a('COLUP0'),a('COLUP1')],'pf_eor':a('pf_eor_value'),
             'render_us':self.peek_word('render_time'),
+            'video_mode':'60Hz' if self.peek_byte('video_mode') else '50Hz',
             # Tearing instrumentation (see check_deadline, record_time).
             'late_sprites':self.peek_word('late_sprites'),
             'late_scores':self.peek_byte('late_scores'),
             'worst_slack_us':signed16(self.peek_word('worst_slack')),
+            'worst_sprite':(('frog0','frog1','fly0','fly1','tongue')[self.peek_byte('worst_slot')%5],
+                            'line %d'%self.peek_byte('worst_line')),
             'frame_times_us':self._frame_times(),
         }
 
@@ -146,6 +153,11 @@ class B2:
         d=self.peek('frame_times',10)
         return dict(zip(('after_keyboard','after_logic','end','scores_start','scores_end'),
                         (d[i]|d[i+1]<<8 for i in range(0,10,2))))
+
+    def screen(self,path=os.path.join(BUILD,'b2-screen.png')):
+        """Screenshot, as 192 rows of 160 BBC colour names, for the
+        current video mode."""
+        return load_screen(self.screenshot(path),self.peek_byte('video_mode'))
 
     def step_time_of_day(self):
         """Make the next time-of-day step happen (within 64 frames), and
@@ -161,13 +173,13 @@ def signed16(v): return v-0x10000 if v>=0x8000 else v
 
 # --- screenshots
 
-def load_screen(path):
+def load_screen(path,video_mode=0):
     """b2 screenshot -> 192 rows of 160 BBC colour names."""
     w,h,rows,_=png.Reader(path).asRGB8()
     rows=[bytes(r) for r in rows]
     screen=[]
     for y in range(HEIGHT):
-        row=rows[SHOT_Y0+y*SHOT_YS]
+        row=rows[SHOT_Y0S[video_mode]+y*SHOT_YS]
         screen.append([BBC_COLOURS.get(tuple(row[x*3:x*3+3]),'?')
                        for x in (SHOT_X0+i*SHOT_XS for i in range(WIDTH))])
     return screen
@@ -223,7 +235,6 @@ def main():
         b2.step_time_of_day(); print('time of day now',b2.peek_byte('byte_B7'))
     elif options.cmd=='screenshot': b2.screenshot(options.path)
     elif options.cmd=='show':
-        path=os.path.join(BUILD,'b2-show.png')
-        print_screen(load_screen(b2.screenshot(path)),range(options.y0,options.y1))
+        print_screen(b2.screen(),range(options.y0,options.y1))
 
 if __name__=='__main__': main()

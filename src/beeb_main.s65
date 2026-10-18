@@ -12,6 +12,9 @@ main:
                 jsr osbyte
 
                 jsr init_crtc
+                lda #video_mode_50hz
+                sta requested_video_mode
+                jsr set_video_mode
                 jsr init_input
                 jsr init_render_timer
 
@@ -58,23 +61,52 @@ game_start:
 ; drawn once the beam has passed the last line sprites can be on. The
 ; vsync event starts User VIA T1 to time out then.
 main_loop:
-                lda #$40
+                jsr choose_render_start
+
+                ; Once per frame: wait for vsync...
 -
-                bit user_via.ifr
+                lda vsync_count
                 beq -
+
+                ; ...then for the beam to pass render_start_line. T1
+                ; (started by the vsync event) times out at
+                ; sprite_last_line+1; before that, it holds the time
+                ; left until then, (sprite_last_line+1-line)*64us.
+-
+                lda #$40
+                bit user_via.ifr
+                bne at_last_line
+                lda user_via.t1c_h
+                cmp render_start_t1h
+                bcs -
+                ; Started early. Note how early (rounding down, so
+                ; deadlines are judged conservatively).
+                sta render_offset+1
+                lda #0
+                sta render_offset+0
+                beq +
+at_last_line:
                 lda user_via.t1c_l ; acknowledge
+                lda #0
+                sta render_offset+0
+                sta render_offset+1
++
+                lda #0
+                sta vsync_count
 
                 ; Time from here with T2. (Not T1: if rendering runs
-                ; past vsync, the vsync event restarts T1.) The beam
-                ; is at line sprite_last_line+1 now.
+                ; past vsync, the vsync event restarts T1.)
                 lda #$ff
                 sta user_via.t2c_l
                 sta user_via.t2c_h
+                jsr set_frame_timings
 
                 jsr sub_F6BE    ; reads CXM0FB/CXM1FB from render_frame
                 jsr prepare_display
                 jsr set_tongue_colour
                 jsr update_palette
+                ldx #10
+                jsr record_time ; frame_times+10: render_frame starts
                 jsr render_frame
 
                 ; Record how long that took, in us.
@@ -89,6 +121,13 @@ main_loop:
                 jsr scan_keyboard
                 ldx #0
                 jsr record_time
+
+                ; Change video mode if asked (f3, or poked by a test).
+                lda requested_video_mode
+                cmp video_mode
+                beq +
+                jsr set_video_mode
++
                 lda SWCHB
                 lsr a           ; C=0 if reset pressed
                 bcs +
@@ -114,7 +153,10 @@ main_loop:
 ;-------------------------------------------------------------------------
 ; Record the time since rendering started, in us, for checking frame
 ; timing with tools/b2.py: frame_times+0 after the keyboard scan, +2
-; after the game logic, +4 at the end of the frame.
+; after the game logic, +4 at the end of the frame, +6/+8 score
+; redraw start/end, +10 when render_frame starts (after sub_F6BE,
+; prepare_display and the palette), +12.. after each sprite is drawn
+; (by slot).
 ;
 ; Entry: X = offset into frame_times
 ;-------------------------------------------------------------------------
@@ -158,11 +200,11 @@ redraw_scores:.block
 +
                 lda scores_changed
                 beq done
-                ; Wait until T2<=$ffff-wait_us, i.e. that long since
-                ; rendering started (to within 256us).
+                ; Wait until the beam is past the score area: T2 high
+                ; byte <= score_wait_t2h (see set_frame_timings).
 -
                 lda user_via.t2c_h
-                cmp #>($ffff-wait_us)
+                cmp score_wait_t2h
                 beq +
                 bcs -
 +
@@ -176,21 +218,12 @@ redraw_scores:.block
                 ; Late if the next frame's rendering should have
                 ; started by now.
                 lda user_via.t2c_h
-                cmp #>($ffff-frame_us)
+                cmp frame_t2h
                 bcs done
                 inc late_scores
 done:
                 rts
-
-; Beam at the line after the score area.
-wait_us=(312-(sprite_last_line+1)+score_area_end_line+1)*64
-frame_us=312*64
                 .endblock
-
-; Time from vsync to the beam passing the last line sprites can be on,
-; in us. Vsync is at character row 32 of 39 (CRTC R7, R4), i.e.
-; scanline 256 of 312. 64us per scanline.
-render_delay=(312-256+sprite_last_line+1)*64
 
 evntv=$220
 
@@ -203,6 +236,8 @@ init_render_timer:.block
                 and #$1f        ; T1 one-shot, no PB7 output; T2 timed
                 sta user_via.acr
 
+                lda #0
+                sta vsync_count
                 sei
                 lda #<vsync_event
                 sta evntv+0
@@ -214,20 +249,140 @@ init_render_timer:.block
                 jmp osbyte
                 .endblock
 
-; Vsync event handler: start the timer. Must preserve A, X, Y.
+; Vsync event handler: start T1, to time out when the beam passes the
+; last line sprites can be on (writing it also clears the last
+; timeout's flag), and count the vsync. Must preserve A, X, Y.
 vsync_event:.block
                 pha
-                lda #<render_delay
+                lda render_delay_us+0
                 sta user_via.t1c_l
-                lda #>render_delay
+                lda render_delay_us+1
                 sta user_via.t1c_h
+                inc vsync_count
                 pla
                 rts
                 .endblock
 
 ;-------------------------------------------------------------------------
+; Choose when to start rendering: as soon as the beam has passed the
+; lowest line anything will be drawn on or restored, which is often
+; well before sprite_last_line+1 (frogs mid-jump, say). Sets
+; render_start_t1h: start once T1's high byte is below this.
+;
+; Conservative estimates of the lowest lines: frogs 188-2*pl_y (row 17,
+; unclipped), flies 173-2*mi_y; the tongue is within its frog's rows.
+;-------------------------------------------------------------------------
+
+choose_render_start:.block
+                lda #0
+                sta render_start_line
+
+                ; What's to be restored.
+                ldx #num_sprites-1
+-
+                lda saved_rows,x
+                beq +
+                clc
+                adc saved_lines,x ; line after the last row
+                jsr lowest
++
+                dex
+                bpl -
+
+                ; What's to be drawn.
+                ldx #1
+-
+                lda pl_ys,x
+                cmp #2
+                bcc +
+                cmp #84
+                bcs +
+                asl a
+                eor #$ff
+                sec
+                adc #188+1      ; line after row 17: 189-2*pl_y
+                jsr lowest
++
+                lda mi_ys,x
+                cmp #2
+                bcc +
+                cmp #84
+                bcs +
+                asl a
+                eor #$ff
+                sec
+                adc #173+1      ; line after: 174-2*mi_y
+                jsr lowest
++
+                dex
+                bpl -
+
+                ; render_start_t1h=(sprite_last_line+1-line)/256*64,
+                ; rounded down.
+                lda #sprite_last_line+1
+                sec
+                sbc render_start_line
+                lsr a
+                lsr a
+                sta render_start_t1h
+                rts
+
+; render_start_line=max(render_start_line,min(A,sprite_last_line+1))
+lowest:
+                cmp #sprite_last_line+1
+                bcc +
+                lda #sprite_last_line+1
++
+                cmp render_start_line
+                bcc +
+                sta render_start_line
++
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Work out this frame's timings, now rendering has started
+; render_offset us before the beam reaches sprite_last_line+1.
+;
+; - deadline_now_us: from now to line 0 of the next frame (see
+;   check_deadline)
+; - score_wait_t2h: T2 high byte once the beam is past the score area
+;   (see redraw_scores)
+; - frame_t2h: T2 high byte when the next frame's rendering would
+;   normally start
+;-------------------------------------------------------------------------
+
+set_frame_timings:.block
+                clc
+                lda deadline_base_us+0
+                adc render_offset+0
+                sta deadline_now_us+0
+                lda deadline_base_us+1
+                adc render_offset+1
+                sta deadline_now_us+1
+
+                ; $ffff-(score_wait_us+render_offset), high byte
+                clc
+                lda score_wait_us+0
+                adc render_offset+0
+                lda score_wait_us+1
+                adc render_offset+1
+                eor #$ff
+                sta score_wait_t2h
+
+                clc
+                lda frame_us+0
+                adc render_offset+0
+                lda frame_us+1
+                adc render_offset+1
+                eor #$ff
+                sta frame_t2h
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
 ; Set up the CRTC for the 160x192 screen at &4400. Assumes MODE 2 has
-; already been selected.
+; already been selected. set_video_mode does the frame rate.
 ;-------------------------------------------------------------------------
 
 init_crtc:.block
@@ -244,9 +399,93 @@ init_crtc:.block
 
 crtc_values:
                 .byte 6,screen_line_count/8 ; displayed character rows
-                .byte 7,32                  ; vsync position (MODE 2 default 34)
+                .byte 8,0                   ; no interlace, so every
+                                            ; frame is the same length
                 .byte 10,$20                ; cursor off
                 .byte 12,>(screen>>3)       ; screen start
                 .byte 13,<(screen>>3)
 crtc_values_end:
+                .endblock
+
+;-------------------------------------------------------------------------
+; Video modes: 50Hz (312 lines; the game runs at the PAL 2600's speed)
+; or 60Hz (262 lines; NTSC speed). Lines are 64us either way.
+;
+; Each mode sets the CRTC vertical total (R4, R5) and vsync position
+; (R7), and the timings that depend on them. Rendering starts as the
+; beam passes the last line sprites can be on, so with T lines and
+; vsync on line V:
+;
+; - render_delay_us: vsync to that line, (T-V+sprite_last_line+1)*64
+; - deadline_base_us: from then to line 0 of the next frame,
+;   (T-sprite_last_line-1)*64 (see check_deadline)
+; - score_wait_us: from then until the beam is past the score area
+;   (see redraw_scores)
+; - frame_us: one frame
+;-------------------------------------------------------------------------
+
+video_mode_50hz=0
+video_mode_60hz=1
+
+video_mode_lines .function r4_,r5_
+                .endf (r4_+1)*8+r5_
+
+video_modes:
+                .for mode_=0,mode_<2,mode_+=1
+r4_:=mode_==0?38:31
+r5_:=mode_==0?0:6
+r7_:=mode_==0?32:27
+lines_:=video_mode_lines(r4_,r5_)
+                .byte r4_,r5_,r7_
+                .word (lines_-r7_*8+sprite_last_line+1)*64
+                .word (lines_-(sprite_last_line+1))*64
+                .word (lines_-(sprite_last_line+1)+score_area_end_line+1)*64
+                .word lines_*64
+                .next
+video_mode_size=11
+
+; Entry: A = video mode
+set_video_mode:.block
+                sta video_mode
+                ldx #0
+                cmp #0
+                beq +
+                ldx #video_mode_size
++
+                ldy #4          ; R4: vertical total (character rows-1)
+                lda video_modes+0,x
+                jsr set_crtc
+                ldy #5          ; R5: vertical total adjust (lines)
+                lda video_modes+1,x
+                jsr set_crtc
+                ldy #7          ; R7: vsync position (character row)
+                lda video_modes+2,x
+                jsr set_crtc
+
+                php
+                sei             ; (the vsync event reads render_delay_us)
+                lda video_modes+3,x
+                sta render_delay_us+0
+                lda video_modes+4,x
+                sta render_delay_us+1
+                plp
+                lda video_modes+5,x
+                sta deadline_base_us+0
+                lda video_modes+6,x
+                sta deadline_base_us+1
+                lda video_modes+7,x
+                sta score_wait_us+0
+                lda video_modes+8,x
+                sta score_wait_us+1
+                lda video_modes+9,x
+                sta frame_us+0
+                lda video_modes+10,x
+                sta frame_us+1
+                rts
+
+; Entry: Y = register, A = value
+set_crtc:
+                sty $fe00
+                sta $fe01
+                rts
                 .endblock
