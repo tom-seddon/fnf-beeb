@@ -441,7 +441,8 @@ Stella.
      frame repeating (see Milestone 5 notes)
    - title and instruction screen, key redefinition (done, see
      Milestone 5 notes)
-   - Master considerations
+   - Master considerations (works; keypad keys added, see Milestone 5
+     notes)
    - a human-readable document on where b2's HTTP API fell short
      during this project (and why), and what facilities would help
      future projects like this. Written from the agent-facing log
@@ -747,6 +748,14 @@ Milestone 5 notes:
   ESCAPE in a game can't be (the game reads the keyboard matrix), so
   that, the redefined keys in play, and CPU frogs ignoring keys were
   play tested by keyboard: all work as expected.
+- Master 128: the game works as it is (play tested in b2's Master 128
+  config). The redefinable keys now include the Master's numeric
+  keypad (matrix columns 10-12; never pressed on a Model B). The
+  title screen tests each keypad key individually, in case MOS 3.20's
+  OSBYTE &79 scan doesn't cover them; in the game, keys are read from
+  the matrix directly, which covers every column. `key_names` is now
+  over 256 bytes, so it's searched via a pointer. Keypad keys play
+  tested in b2's Master config.
 - Memory: the workspace moved to &1100-&13xx (DFS file buffers, unused
   once loaded), as the code now reaches &4300 (screen at &4400), so
   only 256 bytes are left. Anything bigger needs more of the DFS

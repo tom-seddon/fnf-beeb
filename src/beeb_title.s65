@@ -386,6 +386,24 @@ player_key_rows:
 ;-------------------------------------------------------------------------
 
 print_key_name:.block
+                jsr find_key_name
+                bcs unknown
+                lda ptr2+0
+                ldy ptr2+1
+                jmp print_string
+unknown:
+                lda #'?'
+                jmp print_char
+                .endblock
+
+;-------------------------------------------------------------------------
+; Find a key in key_names. (It's over 256 bytes, so via ptr2.)
+;
+; Entry: A = internal key number
+; Exit: C=0 if found, ptr2 = its name; C=1 if not
+;-------------------------------------------------------------------------
+
+find_key_name:.block
                 sta key_to_name
                 lda #<key_names
                 sta ptr2+0
@@ -395,7 +413,7 @@ print_key_name:.block
 search:
                 lda (ptr2),y
                 cmp #$ff
-                beq unknown
+                beq not_found
                 cmp key_to_name
                 beq found
                 ; Skip this entry's name.
@@ -407,12 +425,11 @@ search:
                 jmp search
 found:
                 jsr print_string.next_byte
-                lda ptr2+0
-                ldy ptr2+1
-                jmp print_string
-unknown:
-                lda #'?'
-                jmp print_char
+                clc
+                rts
+not_found:
+                sec
+                rts
                 .endblock
 
 ; Internal key number, then name (up to 6 characters), for each key
@@ -540,6 +557,46 @@ key_names:
                 .null "\"
                 .byte 121
                 .null "RIGHT"
+                ; Master 128 numeric keypad (columns 10-12, which a
+                ; Model B doesn't have).
+                .byte $1a
+                .null "KP 6"
+                .byte $1b
+                .null "KP 7"
+                .byte $2a
+                .null "KP 8"
+                .byte $2b
+                .null "KP 9"
+                .byte $3a
+                .null "KP +"
+                .byte $3b
+                .null "KP -"
+                .byte $3c
+                .null "KP RET"
+                .byte $4a
+                .null "KP /"
+                .byte $4b
+                .null "KP DEL"
+                .byte $4c
+                .null "KP ."
+                .byte $5a
+                .null "KP #"
+                .byte $5b
+                .null "KP *"
+                .byte $5c
+                .null "KP ,"
+                .byte $6a
+                .null "KP 0"
+                .byte $6b
+                .null "KP 1"
+                .byte $6c
+                .null "KP 3"
+                .byte $7a
+                .null "KP 4"
+                .byte $7b
+                .null "KP 5"
+                .byte $7c
+                .null "KP 2"
                 .byte $ff
 
 ;-------------------------------------------------------------------------
@@ -679,28 +736,7 @@ fire_text:      .null "Fire"
 ; Exit: C=0 if it can be a player key (it's in key_names)
 ;-------------------------------------------------------------------------
 
-is_key_allowed:.block
-                ldx #0
--
-                lda key_names,x
-                cmp #$ff
-                beq no
-                cmp redefine_key
-                beq yes
-                ; Skip the name.
--
-                inx
-                lda key_names,x
-                bne -
-                inx
-                jmp --
-yes:
-                clc
-                rts
-no:
-                sec
-                rts
-                .endblock
+is_key_allowed=find_key_name
 
 ;-------------------------------------------------------------------------
 ; Which key is pressed?
@@ -728,6 +764,23 @@ get_key:.block
                 ldx #16
                 jsr osbyte      ; X = first key pressed from 16, or $ff
                 txa
+                bpl done
+                ; The Master's keypad might not be in that scan, so try
+                ; each keypad key. (On a Model B they're never pressed.)
+                ldy #size(keypad_keys)-1
+-
+                lda keypad_keys,y
+                ora #$80
+                tax
+                jsr test_os_key
+                bmi keypad
+                dey
+                bpl -
+                lda #no_key
+done:
+                rts
+keypad:
+                lda keypad_keys,y
                 rts
 shift:
                 lda #key_shift
@@ -736,10 +789,14 @@ ctrl:
                 lda #key_ctrl
                 rts
 
-; Entry: X = key number|$80. Exit: N=1 if pressed.
+keypad_keys:    .byte $1a,$1b,$2a,$2b,$3a,$3b,$3c,$4a,$4b,$4c,$5a,$5b,$5c,$6a,$6b,$6c,$7a,$7b,$7c
+
+; Entry: X = key number|$80. Exit: N=1 if pressed; Y preserved.
 test_os_key:
+                sty test_os_key_y
                 lda #$79
                 jsr osbyte
+                ldy test_os_key_y
                 txa
                 rts
                 .endblock

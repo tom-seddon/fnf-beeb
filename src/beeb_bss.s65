@@ -141,6 +141,7 @@ test_key:       .fill 1         ; poke internal key number+1 to press it
 print_padded_x: .fill 1
 draw_key_x:     .fill 1
 key_to_name:    .fill 1
+test_os_key_y:  .fill 1
 redefine_step:  .fill 1
 redefine_key_index:.fill 1
 redefine_key:   .fill 1
