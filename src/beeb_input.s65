@@ -27,11 +27,16 @@ inkey_f1=$100-114
 inkey_f2=$100-115
 inkey_f3=$100-116
 
-; Keys making up SWCHA, from bit 7 down to bit 0.
-swcha_keys:
+inkey_escape=$100-113
+
+; Default player keys (copied to player_keys, which the title screen
+; can redefine): SWCHA bits 7 down to 0 (P0 R L D U, P1 R L D U), then
+; P0 fire, P1 fire.
+default_player_keys:
                 .byte inkey_d,inkey_a,inkey_s,inkey_w
                 .byte inkey_right,inkey_left,inkey_down,inkey_up
-swcha_keys_end:
+                .byte inkey_tab,inkey_return
+num_player_keys=*-default_player_keys
 
 ;-------------------------------------------------------------------------
 
@@ -42,6 +47,16 @@ init_input:.block
                 sta SWCHB
                 lda #0
                 sta toggle_keys
+                sta player_is_cpu+0
+                sta player_is_cpu+1
+                sta attract_mode
+                sta test_key
+                ldx #num_player_keys-1
+-
+                lda default_player_keys,x
+                sta player_keys,x
+                dex
+                bpl -
                 rts
                 .endblock
 
@@ -60,20 +75,51 @@ scan_keyboard:.block
                 ; Joysticks.
                 ldy #0
 -
-                lda swcha_keys,y
+                lda player_keys,y
                 jsr read_key
                 rol SWCHA       ; C=0 if pressed
                 iny
-                cpy #swcha_keys_end-swcha_keys
+                cpy #8
                 bne -
 
                 ; Fire buttons.
-                lda #inkey_tab
+                lda player_keys+8
                 jsr read_key
                 ror INPT4
-                lda #inkey_return
+                lda player_keys+9
                 jsr read_key
                 ror INPT5
+
+                ; Escape (back to the title screen).
+                lda #inkey_escape
+                jsr read_key
+                lda #0
+                rol a
+                eor #1
+                sta escape_pressed ; 1 if pressed
+
+                ; A CPU player's keys do nothing, so they can't take
+                ; the frog back. (In attract mode, both.)
+                lda player_is_cpu+0
+                ora attract_mode
+                beq +
+                lda SWCHA
+                ora #$f0
+                sta SWCHA
+                lda INPT4
+                ora #$80
+                sta INPT4
++
+                lda player_is_cpu+1
+                ora attract_mode
+                beq +
+                lda SWCHA
+                ora #$0f
+                sta SWCHA
+                lda INPT5
+                ora #$80
+                sta INPT5
++
 
                 ; Reset.
                 lda #inkey_f0

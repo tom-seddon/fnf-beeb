@@ -47,16 +47,26 @@ screenshot` to save its screen to `build/beeb-screen.png`.
 
 # BBC keys
 
+Default keys (they can be redefined):
+
 | | Up | Down | Left | Right | Fire |
 |---|---|---|---|---|---|
 | Left frog | W | S | A | D | Tab |
 | Right frog | ↑ | ↓ | ← | → | Return |
 
-f0 resets the game. f1 and f2 toggle the left and right players'
-difficulty (amateur/pro), like the 2600's difficulty switches. f3
-switches between 50Hz (the default; the game runs at the speed of the
-PAL 2600 cartridge) and 60Hz (the NTSC cartridge's speed), for displays
-that can sync to it.
+The title screen shows the keys and settings. f1 and f2 toggle the left
+and right players' difficulty (amateur/pro), like the 2600's
+difficulty switches. f3 switches between 50Hz (the default; the game
+runs at the speed of the PAL 2600 cartridge) and 60Hz (the NTSC
+cartridge's speed), for displays that can sync to it. f4 and f5 make
+the left and right frogs human or CPU-controlled. f6 redefines the
+player keys. SPACE starts the game; left alone, the title screen
+starts a demo game, and any key goes back.
+
+In the game, f0 restarts, f1-f3 work as on the title screen, and
+ESCAPE goes back to the title screen. A human player's frog left idle
+is taken over by the computer, as on the 2600. The game goes back to
+the title screen a few seconds after it ends.
 A frog left idle is taken over by the computer.
 
 # source layout

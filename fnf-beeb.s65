@@ -63,6 +63,8 @@ sprite_row_selector_table=0
                 .include "src/beeb_sprites.s65"
                 .include "src/beeb_input.s65"
                 .include "src/beeb_sound.s65"
+                .include "src/beeb_text.s65"
+                .include "src/beeb_title.s65"
                 .include "src/beeb_tables.s65"
 
 ;-------------------------------------------------------------------------
@@ -78,10 +80,13 @@ sprite_row_selector_table=0
 code_end:
 
 ;-------------------------------------------------------------------------
-; Workspace outside zero page, after the code.
+; Workspace outside zero page. In the DFS's workspace (file buffers),
+; which isn't used once the game has loaded: nothing touches the disc
+; after that. (Uninitialised, so loading doesn't write it.)
 ;-------------------------------------------------------------------------
 
-                .virtual code_end
+                .cerror code_end>screen,"code overlaps screen"
+                .virtual $1100
 
 ; Shadow registers that only appear in ordinary addressing modes, so
 ; can go anywhere.
@@ -98,5 +103,5 @@ AUDV0:          .fill 2
                 .include "src/beeb_bss.s65"
 
 bss_end:
-                .cerror *>screen,"workspace overlaps screen"
+                .cerror *>$1900,"workspace overflow"
                 .endv

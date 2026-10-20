@@ -1,0 +1,231 @@
+;-------------------------------------------------------------------------
+; Text, for the title screen (BBC only).
+;
+; Characters are the OS font (OSWORD 10), 8x8 MODE 2 pixels, on a
+; 20x24 grid of character cells. Optionally double height.
+;
+; print_string takes a string of characters and control codes:
+;
+;   text_end            end of string
+;   text_colour, c      set foreground logical colour
+;   text_double         toggle double height
+;   text_move, x, y     move to column x, row y
+;-------------------------------------------------------------------------
+
+text_end=0
+text_colour=1
+text_double=2
+text_move=3
+
+text_columns=20
+text_rows=24
+
+;-------------------------------------------------------------------------
+; Clear the screen to logical colour 0, and reset the text state:
+; column 0, row 0, colour 7, background 0, single height.
+;-------------------------------------------------------------------------
+
+clear_text_screen:.block
+                lda #<screen
+                sta ptr+0
+                lda #>screen
+                sta ptr+1
+                lda #0
+                tay
+                ldx #>($8000-screen)
+-
+                sta (ptr),y
+                iny
+                bne -
+                inc ptr+1
+                dex
+                bne -
+
+                lda #0
+                sta text_x
+                sta text_y
+                sta text_bg
+                sta text_is_double
+                lda #7
+                sta text_fg
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Entry: A = string address low byte, Y = high byte
+;-------------------------------------------------------------------------
+
+print_string:.block
+                sta ptr2+0
+                sty ptr2+1
+loop:
+                ldy #0
+                lda (ptr2),y
+                beq done
+                jsr next_byte
+                cmp #text_colour
+                beq colour
+                cmp #text_double
+                beq double
+                cmp #text_move
+                beq move
+                jsr print_char
+                jmp loop
+
+colour:
+                lda (ptr2),y
+                sta text_fg
+                jsr next_byte
+                jmp loop
+
+double:
+                lda text_is_double
+                eor #1
+                sta text_is_double
+                jmp loop
+
+move:
+                lda (ptr2),y
+                sta text_x
+                jsr next_byte
+                lda (ptr2),y
+                sta text_y
+                jsr next_byte
+                jmp loop
+
+done:
+                rts
+
+; Step ptr2 on a byte. Preserves A, Y.
+next_byte:
+                inc ptr2+0
+                bne +
+                inc ptr2+1
++
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Print a character at (text_x, text_y), and move along a column.
+;
+; Entry: A = character
+; Exit: Y preserved
+;-------------------------------------------------------------------------
+
+print_char:.block
+                sta text_font+0
+                sty print_char_y
+
+                ; Character definition, 8 rows top to bottom.
+                lda #10
+                ldx #<text_font
+                ldy #>text_font
+                jsr osword
+
+                ; Screen bytes for each 2-pixel pair: 00, 01, 10, 11.
+                ldx text_bg
+                lda solid_bytes,x
+                sta text_pair_bytes+0
+                ldx text_fg
+                lda solid_bytes,x
+                sta text_pair_bytes+3
+                ; 01: background left, foreground right
+                lda text_pair_bytes+0
+                and #%10101010
+                sta text_temp
+                lda text_pair_bytes+3
+                and #%01010101
+                ora text_temp
+                sta text_pair_bytes+1
+                ; 10: foreground left, background right
+                lda text_pair_bytes+3
+                and #%10101010
+                sta text_temp
+                lda text_pair_bytes+0
+                and #%01010101
+                ora text_temp
+                sta text_pair_bytes+2
+
+                ; Draw: 8 font rows, each once or twice.
+                lda #0
+                sta text_line   ; line within this character's area
+                ldx #0          ; font row
+row_loop:
+                lda text_font+1,x
+                sta text_bits
+                jsr draw_text_line
+                lda text_is_double
+                beq +
+                lda text_font+1,x
+                sta text_bits
+                jsr draw_text_line
++
+                inx
+                cpx #8
+                bne row_loop
+
+                inc text_x
+                ldy print_char_y
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Draw one line of a character: 8 pixels from text_bits, at line
+; text_line of the character's area. Increments text_line.
+;
+; Exit: X preserved
+;-------------------------------------------------------------------------
+
+draw_text_line:.block
+                stx text_save_x
+
+                ; Address: screen+(row*8+line)/8*640+(line%8)+col*32.
+                lda text_y
+                asl a
+                asl a
+                asl a
+                clc
+                adc text_line   ; screen line
+                tax
+                ; col*32: high byte col>>3, low byte (col&7)<<5.
+                lda text_x
+                lsr a
+                lsr a
+                lsr a
+                sta text_temp2
+                lda text_x
+                and #7
+                asl a
+                asl a
+                asl a
+                asl a
+                asl a
+                clc
+                adc line_addrs_lo,x
+                sta ptr+0
+                lda text_temp2
+                adc line_addrs_hi,x
+                sta ptr+1
+
+                ; 4 bytes, 8 apart: pixel pairs from the top bits.
+                ldy #0
+-
+                lda #0
+                asl text_bits
+                rol a
+                asl text_bits
+                rol a
+                tax
+                lda text_pair_bytes,x
+                sta (ptr),y
+                tya
+                clc
+                adc #8
+                tay
+                cpy #32
+                bne -
+
+                inc text_line
+                ldx text_save_x
+                rts
+                .endblock

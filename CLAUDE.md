@@ -21,7 +21,9 @@
   From the command line: `run`, `state` (frogs, flies, scores, time of
   day, render time), `peek`/`poke` (label names like `pl_xs+1` work),
   `patch-call NAME` (NOP out main_loop's `jsr NAME`), `step-time`,
-  `screenshot`, `show Y0 Y1` (print screen lines as characters). As a
+  `screenshot`, `show Y0 Y1` (print screen lines as characters), `press
+  KEY` (title screen keys, via the game's `test_key` hook; in-game keys
+  can't be pressed). As a
   module (`sys.path.append('tools'); import b2`), `B2()` has the same
   and more, plus `load_screen`/`find_colour` for screenshots. Its
   header comment has recipes: driving inputs by patching out

@@ -159,6 +159,14 @@ class B2:
         current video mode."""
         return load_screen(self.screenshot(path),self.peek_byte('video_mode'))
 
+    def press_key(self,key,wait=0.4):
+        """Press a key on the title screen (or to leave attract mode),
+        through the game's test_key hook: internal key number (e.g.
+        98 SPACE, 113 f1, 117 f6). Doesn't work for in-game keys,
+        which are read from the keyboard matrix directly."""
+        self.poke('test_key',key+1)
+        time.sleep(wait)
+
     def step_time_of_day(self):
         """Make the next time-of-day step happen (within 64 frames), and
         wait for it."""
@@ -213,6 +221,8 @@ def main():
     p.add_argument('values',type=auto_int,nargs='+')
     p=sub.add_parser('patch-call',help='NOP out a jsr (default: the last one, i.e. main_loop\'s)')
     p.add_argument('name')
+    p=sub.add_parser('press',help='press a key on the title screen (test_key hook)')
+    p.add_argument('key',type=auto_int,help='internal key number (98 SPACE, 113-117 f1-f3/f5/f6, 20 f4, 112 ESCAPE)')
     p=sub.add_parser('step-time',help='advance the time of day one step')
     p=sub.add_parser('screenshot',help='save a screenshot')
     p.add_argument('path')
@@ -231,6 +241,7 @@ def main():
     elif options.cmd=='peek': print(' '.join('%02x'%v for v in b2.peek(addr(options.addr),options.n)))
     elif options.cmd=='poke': b2.poke(addr(options.addr),options.values)
     elif options.cmd=='patch-call': print('patched jsr at &%04x'%b2.patch_call(options.name))
+    elif options.cmd=='press': b2.press_key(options.key)
     elif options.cmd=='step-time':
         b2.step_time_of_day(); print('time of day now',b2.peek_byte('byte_B7'))
     elif options.cmd=='screenshot': b2.screenshot(options.path)

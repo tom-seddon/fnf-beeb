@@ -21,6 +21,11 @@ milestone/date where useful).
   ideally queued with frame timing. (M2-M4)
 - [keyboard] Keyboard play tests had to be done by the user for the
   same reason (e.g. ghosting on diagonal + fire). (M2)
+- [keyboard] For the title screen, the game itself got a test hook
+  (poke `test_key` to act as a key press), which only works because
+  the title screen reads keys through one routine. In-game keys
+  (read straight from the matrix) and ESCAPE still need the user.
+  Code added only because the emulator can't press keys. (M5)
 
 ## Output: video
 

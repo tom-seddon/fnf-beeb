@@ -439,7 +439,8 @@ Stella.
    - tearing (done, see Milestone 5 notes)
    - NTSC speed: done as an optional 60Hz video mode rather than 6:5
      frame repeating (see Milestone 5 notes)
-   - title and instruction screen, key redefinition
+   - title and instruction screen, key redefinition (done, see
+     Milestone 5 notes)
    - Master considerations
    - a human-readable document on where b2's HTTP API fell short
      during this project (and why), and what facilities would help
@@ -721,6 +722,35 @@ Milestone 5 notes:
 - Result: worst time to spare 2.5-3ms at 60Hz (was down to -0.2ms,
   frog 0 at the top of a jump), 5.7-6.2ms at 50Hz; nothing late in
   attract play or the end sequence at either rate.
+- Title screen (`src/beeb_title.s65`, text in `src/beeb_text.s65`):
+  a separate screen at boot, after a game ends (4s after "THE END"),
+  and on ESCAPE in a game. Shows credits, the player keys and the
+  settings: f1/f2 difficulty, f3 50/60Hz, f4/f5 human/CPU per frog,
+  f6 redefine keys, SPACE start. Left alone for 20s it starts attract
+  mode (both frogs CPU); any key goes back. Text is the OS font
+  (OSWORD 10), 8x8 MODE 2 pixels on a 20x24 grid, optionally double
+  height. Title screen keys are read with OSBYTE &79.
+- The player keys are now a RAM table (`player_keys`, from
+  `default_player_keys` at boot), redefinable for the 10 player keys;
+  ESCAPE cancels a redefinition. Any key in `key_names` (with a short
+  name) is allowed, including SHIFT and CTRL; function keys and ESCAPE
+  aren't, and a key can't be used twice.
+- A CPU frog (f4/f5, or attract mode) starts with `pl_flags` bit 6
+  set and `unk_BF`=2, as `sub_F71F` would set it up, and its player's
+  keys are masked out in `scan_keyboard`, so it stays CPU. A human
+  frog left idle is still taken over, as on the 2600. The shared code
+  is unchanged.
+- Test hook: poking `test_key` (internal key number+1) acts like a key
+  press on the title screen (`tools/b2.py press`). Settings, start,
+  attract mode and back, redefinition (including a duplicate key and
+  ESCAPE) and the return after "THE END" were all checked that way.
+  ESCAPE in a game can't be (the game reads the keyboard matrix), so
+  that, the redefined keys in play, and CPU frogs ignoring keys were
+  play tested by keyboard: all work as expected.
+- Memory: the workspace moved to &1100-&13xx (DFS file buffers, unused
+  once loaded), as the code now reaches &4300 (screen at &4400), so
+  only 256 bytes are left. Anything bigger needs more of the DFS
+  workspace, or code moved below &1900 after loading.
 - Checked in b2 by logging the TIA shadows against the SN76489 values
   written: tongue (noise) and eating a fly (tone) convert as
   intended. Listened to in b2: sounds good.

@@ -17,6 +17,7 @@ main:
                 jsr set_video_mode
                 jsr init_input
                 jsr init_render_timer
+                jmp title_screen
 
 ; Start (or restart) the game. Like the 2600's main.
 game_start:
@@ -44,6 +45,24 @@ game_start:
                 sta CXM1FB
                 jsr handle_players_inputs
                 jsr initialise_memory
+
+                ; Frogs the CPU plays from the start (as sub_F71F would
+                ; set them up after an idle spell).
+                ldx #1
+-
+                lda player_is_cpu,x
+                ora attract_mode
+                beq +
+                lda pl_flags,x
+                ora #$40
+                sta pl_flags,x
+                lda #2
+                sta unk_BF,x
++
+                dex
+                bpl -
+                lda #0
+                sta end_timer
 
                 jsr init_sound
                 jsr init_palette
@@ -133,6 +152,7 @@ at_last_line:
                 bcs +
                 jmp game_start
 +
+                jsr check_back_to_title
                 inc byte_B3
                 jsr handle_players_inputs
                 jsr update_player_physics
@@ -149,6 +169,43 @@ at_last_line:
                 ldx #4
                 jsr record_time
                 jmp main_loop
+
+;-------------------------------------------------------------------------
+; Go back to the title screen on Escape, on any key in attract mode,
+; or a few seconds after the game has ended ("THE END": byte_B4 bit
+; 7, both frogs in state 8).
+;-------------------------------------------------------------------------
+
+end_seconds=4
+
+check_back_to_title:.block
+                lda escape_pressed
+                bne title
+                lda attract_mode
+                beq +
+                jsr get_key
+                cmp #no_key
+                bne title
++
+                lda byte_B4
+                bpl done
+                lda pl_states+0
+                cmp #8
+                bne done
+                lda pl_states+1
+                cmp #8
+                bne done
+                inc end_timer
+                lda end_timer
+                cmp #end_seconds*50
+                bcc done
+title:
+                pla             ; (not returning)
+                pla
+                jmp title_screen
+done:
+                rts
+                .endblock
 
 ;-------------------------------------------------------------------------
 ; Record the time since rendering started, in us, for checking frame

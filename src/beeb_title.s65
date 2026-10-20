@@ -1,0 +1,763 @@
+;-------------------------------------------------------------------------
+; Title screen, settings and key redefinition (BBC only).
+;
+; Shown at boot, after a game ends, and on Escape during a game. Keys:
+;
+;   f1/f2   left/right player difficulty (as in the game)
+;   f3      50/60Hz (as in the game)
+;   f4/f5   left/right frog human or CPU
+;   f6      redefine the player keys
+;   SPACE   start
+;
+; Left alone, it starts attract mode (both frogs CPU); any key goes
+; back to the title.
+;
+; Keys are read with OSBYTE &79 here (speed doesn't matter). b2 can't
+; press keys, so poking test_key (internal key number+1) acts like a
+; key press, for testing.
+;-------------------------------------------------------------------------
+
+; Internal key numbers (negative INKEY code -1).
+key_shift=0
+key_ctrl=1
+key_space=98
+key_escape=112
+key_f1=113
+key_f2=114
+key_f3=115
+key_f4=20
+key_f5=116
+key_f6=117
+no_key=$ff
+
+title_idle_seconds=20
+
+;-------------------------------------------------------------------------
+
+title_screen:.block
+                jsr init_sound
+                jsr set_title_palette
+                jsr draw_title_screen
+                lda #0
+                sta attract_mode
+                jsr wait_no_key
+
+restart_idle:
+                lda #<(title_idle_seconds*50)
+                sta title_idle+0
+                lda #>(title_idle_seconds*50)
+                sta title_idle+1
+loop:
+                lda #19         ; wait for vsync
+                jsr osbyte
+                jsr flush_keyboard_buffer
+                jsr get_key
+                cmp #no_key
+                bne key
+
+                ; Nothing pressed. Attract mode after a while.
+                lda title_idle+0
+                bne +
+                dec title_idle+1
+                bmi attract
++
+                dec title_idle+0
+                jmp loop
+
+attract:
+                lda #1
+                sta attract_mode
+                jmp start_game
+
+key:
+                cmp #key_space
+                beq start
+                cmp #key_f1
+                bne +
+                lda #$40        ; P0 difficulty
+                jmp toggle_difficulty
++
+                cmp #key_f2
+                bne +
+                lda #$80        ; P1 difficulty
+                jmp toggle_difficulty
++
+                cmp #key_f3
+                bne +
+                lda requested_video_mode
+                eor #1
+                sta requested_video_mode
+                jsr set_video_mode
+                jmp changed
++
+                cmp #key_f4
+                bne +
+                ldx #0
+                jmp toggle_cpu
++
+                cmp #key_f5
+                bne +
+                ldx #1
+                jmp toggle_cpu
++
+                cmp #key_f6
+                bne +
+                jsr redefine_keys
+                jsr draw_title_screen
+                jmp changed
++
+                jmp changed     ; any other key: just restart the idle time
+
+toggle_difficulty:
+                eor SWCHB
+                sta SWCHB
+                jmp changed
+
+toggle_cpu:
+                lda player_is_cpu,x
+                eor #1
+                sta player_is_cpu,x
+
+changed:
+                jsr draw_title_settings
+                jsr wait_no_key
+                jmp restart_idle
+
+start:
+                jsr wait_no_key
+start_game:
+                jmp game_start
+                .endblock
+
+;-------------------------------------------------------------------------
+; Logical colours 0-7 as the 8 physical colours, for the title screen.
+; (The game sets all 16 again when it starts.)
+;-------------------------------------------------------------------------
+
+set_title_palette:.block
+                ldx #15
+-
+                txa
+                and #7
+                eor #7
+                sta text_temp
+                txa
+                asl a
+                asl a
+                asl a
+                asl a
+                ora text_temp
+                sta video_ula_palette
+                dex
+                bpl -
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+
+black=0
+red=1
+green=2
+yellow=3
+blue=4
+magenta=5
+cyan=6
+white=7
+
+; Columns of the key table and settings.
+keys_left_column=6
+keys_right_column=12
+keys_first_row=9
+settings_column=11
+settings_first_row=15
+
+draw_title_screen:.block
+                jsr clear_text_screen
+                lda #<title_text
+                ldy #>title_text
+                jsr print_string
+                jsr draw_title_settings
+                jmp draw_title_keys
+                .endblock
+
+title_text:
+                .byte text_move,2,1,text_colour,green,text_double
+                .text "FROGS AND FLIES"
+                .byte text_double
+                .byte text_move,1,4,text_colour,cyan
+                .text "Original 2600 game"
+                .byte text_move,3,5
+                .text "1982 M Network"
+                .byte text_move,0,6
+                .text "BBC Micro port 2026"
+
+                .byte text_move,keys_left_column,keys_first_row-1,text_colour,white
+                .text "Left  Right"
+                .byte text_colour,yellow
+                .byte text_move,0,keys_first_row+0
+                .text "Up"
+                .byte text_move,0,keys_first_row+1
+                .text "Down"
+                .byte text_move,0,keys_first_row+2
+                .text "Left"
+                .byte text_move,0,keys_first_row+3
+                .text "Right"
+                .byte text_move,0,keys_first_row+4
+                .text "Fire"
+
+                .byte text_colour,yellow
+                .byte text_move,0,settings_first_row+0
+                .text "f1 Left"
+                .byte text_move,0,settings_first_row+1
+                .text "f2 Right"
+                .byte text_move,0,settings_first_row+2
+                .text "f4 Left"
+                .byte text_move,0,settings_first_row+3
+                .text "f5 Right"
+                .byte text_move,0,settings_first_row+4
+                .text "f3 Video"
+                .byte text_move,0,settings_first_row+6
+                .text "f6 Redefine keys"
+                .byte text_move,0,23,text_colour,green
+                .text "SPACE to start"
+                .byte text_end
+
+;-------------------------------------------------------------------------
+; Draw the settings' current values.
+;-------------------------------------------------------------------------
+
+draw_title_settings:.block
+                lda #white
+                sta text_fg
+
+                ; Difficulty: SWCHB bit 6 (P0) / bit 7 (P1), 1=pro.
+                ldx #0
+-
+                lda #settings_column
+                sta text_x
+                txa
+                clc
+                adc #settings_first_row
+                sta text_y
+                lda SWCHB
+                and difficulty_bits,x
+                beq +
+                lda #<pro_text
+                ldy #>pro_text
+                bne ++
++
+                lda #<amateur_text
+                ldy #>amateur_text
++
+                jsr print_padded
+                inx
+                cpx #2
+                bne -
+
+                ; Human/CPU.
+                ldx #0
+-
+                lda #settings_column
+                sta text_x
+                txa
+                clc
+                adc #settings_first_row+2
+                sta text_y
+                lda player_is_cpu,x
+                beq +
+                lda #<cpu_text
+                ldy #>cpu_text
+                bne ++
++
+                lda #<human_text
+                ldy #>human_text
++
+                jsr print_padded
+                inx
+                cpx #2
+                bne -
+
+                ; Video mode.
+                lda #settings_column
+                sta text_x
+                lda #settings_first_row+4
+                sta text_y
+                lda requested_video_mode
+                beq +
+                lda #<hz60_text
+                ldy #>hz60_text
+                bne ++
++
+                lda #<hz50_text
+                ldy #>hz50_text
++
+                jmp print_padded
+
+difficulty_bits:.byte $40,$80
+                .endblock
+
+amateur_text:   .null "Amateur"
+pro_text:       .null "Pro"
+human_text:     .null "Human"
+cpu_text:       .null "CPU"
+hz50_text:      .null "50Hz"
+hz60_text:      .null "60Hz"
+
+;-------------------------------------------------------------------------
+; Print a string, then spaces up to the right edge (to clear what was
+; there).
+;
+; Entry: A = string low byte, Y = high byte; text_x, text_y set
+; Exit: X preserved
+;-------------------------------------------------------------------------
+
+print_padded:.block
+                stx print_padded_x
+                jsr print_string
+-
+                lda text_x
+                cmp #text_columns
+                bcs +
+                lda #' '
+                jsr print_char
+                jmp -
++
+                ldx print_padded_x
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Draw the current player keys.
+;-------------------------------------------------------------------------
+
+draw_title_keys:.block
+                ldx #0
+-
+                jsr draw_player_key
+                inx
+                cpx #num_player_keys
+                bne -
+                rts
+                .endblock
+
+; Entry: X = player key index (see player_keys)
+; Exit: X preserved
+draw_player_key:.block
+                stx draw_key_x
+                lda player_key_columns,x
+                sta text_x
+                lda player_key_rows,x
+                sta text_y
+                lda #white
+                sta text_fg
+                lda player_keys,x
+                eor #$ff        ; INKEY byte -> internal key number
+                jsr print_key_name
+                ; Pad to 6 characters. (print_char doesn't preserve X.)
+-
+                ldx draw_key_x
+                lda text_x
+                sec
+                sbc player_key_columns,x
+                cmp #6
+                bcs +
+                lda #' '
+                jsr print_char
+                jmp -
++
+                rts
+                .endblock
+
+; Where each player key goes in the table: rows Up, Down, Left, Right,
+; Fire; columns left, right. (Order as player_keys.)
+player_key_columns:
+                .fill 4,keys_left_column
+                .fill 4,keys_right_column
+                .byte keys_left_column,keys_right_column
+player_key_rows:
+                .byte keys_first_row+3,keys_first_row+2,keys_first_row+1,keys_first_row+0 ; P0 R L D U
+                .byte keys_first_row+3,keys_first_row+2,keys_first_row+1,keys_first_row+0 ; P1 R L D U
+                .byte keys_first_row+4,keys_first_row+4 ; fire
+
+;-------------------------------------------------------------------------
+; Print a key's name.
+;
+; Entry: A = internal key number
+;-------------------------------------------------------------------------
+
+print_key_name:.block
+                sta key_to_name
+                lda #<key_names
+                sta ptr2+0
+                lda #>key_names
+                sta ptr2+1
+                ldy #0
+search:
+                lda (ptr2),y
+                cmp #$ff
+                beq unknown
+                cmp key_to_name
+                beq found
+                ; Skip this entry's name.
+-
+                jsr print_string.next_byte
+                lda (ptr2),y
+                bne -
+                jsr print_string.next_byte
+                jmp search
+found:
+                jsr print_string.next_byte
+                lda ptr2+0
+                ldy ptr2+1
+                jmp print_string
+unknown:
+                lda #'?'
+                jmp print_char
+                .endblock
+
+; Internal key number, then name (up to 6 characters), for each key
+; the player can choose. (Function keys and Escape aren't allowed.)
+key_names:
+                .byte 0
+                .null "SHIFT"
+                .byte 1
+                .null "CTRL"
+                .byte 16
+                .null "Q"
+                .byte 17
+                .null "3"
+                .byte 18
+                .null "4"
+                .byte 19
+                .null "5"
+                .byte 21
+                .null "8"
+                .byte 23
+                .null "-"
+                .byte 24
+                .null "^"
+                .byte 25
+                .null "LEFT"
+                .byte 33
+                .null "W"
+                .byte 34
+                .null "E"
+                .byte 35
+                .null "T"
+                .byte 36
+                .null "7"
+                .byte 37
+                .null "I"
+                .byte 38
+                .null "9"
+                .byte 39
+                .null "0"
+                .byte 40
+                .null "_"
+                .byte 41
+                .null "DOWN"
+                .byte 48
+                .null "1"
+                .byte 49
+                .null "2"
+                .byte 50
+                .null "D"
+                .byte 51
+                .null "R"
+                .byte 52
+                .null "6"
+                .byte 53
+                .null "U"
+                .byte 54
+                .null "O"
+                .byte 55
+                .null "P"
+                .byte 56
+                .null "["
+                .byte 57
+                .null "UP"
+                .byte 64
+                .null "CAPS"
+                .byte 65
+                .null "A"
+                .byte 66
+                .null "X"
+                .byte 67
+                .null "F"
+                .byte 68
+                .null "Y"
+                .byte 69
+                .null "J"
+                .byte 70
+                .null "K"
+                .byte 71
+                .null "@"
+                .byte 72
+                .null ":"
+                .byte 73
+                .null "RETURN"
+                .byte 80
+                .null "S LOCK"
+                .byte 81
+                .null "S"
+                .byte 82
+                .null "C"
+                .byte 83
+                .null "G"
+                .byte 84
+                .null "H"
+                .byte 85
+                .null "N"
+                .byte 86
+                .null "L"
+                .byte 87
+                .null ";"
+                .byte 88
+                .null "]"
+                .byte 89
+                .null "DELETE"
+                .byte 96
+                .null "TAB"
+                .byte 97
+                .null "Z"
+                .byte 98
+                .null "SPACE"
+                .byte 99
+                .null "V"
+                .byte 100
+                .null "B"
+                .byte 101
+                .null "M"
+                .byte 102
+                .null ","
+                .byte 103
+                .null "."
+                .byte 104
+                .null "/"
+                .byte 105
+                .null "COPY"
+                .byte 120
+                .null "\"
+                .byte 121
+                .null "RIGHT"
+                .byte $ff
+
+;-------------------------------------------------------------------------
+; Redefine the player keys: ask for each in turn. Escape cancels,
+; leaving them as they were.
+;-------------------------------------------------------------------------
+
+redefine_keys:.block
+                ldx #num_player_keys-1
+-
+                lda player_keys,x
+                sta previous_player_keys,x
+                dex
+                bpl -
+
+                jsr clear_text_screen
+                lda #<redefine_text
+                ldy #>redefine_text
+                jsr print_string
+                jsr wait_no_key
+
+                ; Ask in the order Up, Down, Left, Right, Fire for the
+                ; left frog, then the right.
+                lda #0
+                sta redefine_step
+step_loop:
+                ldx redefine_step
+                lda redefine_order,x
+                sta redefine_key_index
+
+                ; Prompt.
+                lda #0
+                sta text_x
+                lda #10
+                sta text_y
+                lda #yellow
+                sta text_fg
+                ldx redefine_step
+                lda #<left_frog_text
+                ldy #>left_frog_text
+                cpx #5
+                bcc +
+                lda #<right_frog_text
+                ldy #>right_frog_text
++
+                jsr print_padded
+                lda #0
+                sta text_x
+                lda #12
+                sta text_y
+                ldx redefine_step
+                lda redefine_names_lo,x
+                ldy redefine_names_hi,x
+                jsr print_padded
+
+wait_key:
+                lda #19
+                jsr osbyte
+                jsr flush_keyboard_buffer
+                jsr get_key
+                cmp #no_key
+                beq wait_key
+                cmp #key_escape
+                beq cancel
+                ; Allowed, and not already taken in this round?
+                sta redefine_key
+                jsr is_key_allowed
+                bcs wait_key
+                ldx #0
+-
+                cpx redefine_step
+                beq +
+                lda redefine_order,x
+                tay
+                lda player_keys,y
+                eor #$ff
+                cmp redefine_key
+                beq wait_key
+                inx
+                bne -
++
+                ; Take it.
+                lda redefine_key
+                eor #$ff        ; -> INKEY byte
+                ldx redefine_key_index
+                sta player_keys,x
+                jsr wait_no_key
+
+                inc redefine_step
+                lda redefine_step
+                cmp #num_player_keys
+                beq +
+                jmp step_loop
++
+                rts
+
+cancel:
+                ldx #num_player_keys-1
+-
+                lda previous_player_keys,x
+                sta player_keys,x
+                dex
+                bpl -
+                jmp wait_no_key
+
+; player_keys index for each step.
+redefine_order:
+                .byte 3,2,1,0,8 ; P0 U D L R fire
+                .byte 7,6,5,4,9 ; P1
+redefine_names_lo:
+                .byte <up_text,<down_text,<left_text,<right_text,<fire_text
+                .byte <up_text,<down_text,<left_text,<right_text,<fire_text
+redefine_names_hi:
+                .byte >up_text,>down_text,>left_text,>right_text,>fire_text
+                .byte >up_text,>down_text,>left_text,>right_text,>fire_text
+                .endblock
+
+redefine_text:
+                .byte text_move,0,2,text_colour,green,text_double
+                .text "  REDEFINE KEYS"
+                .byte text_double
+                .byte text_move,0,6,text_colour,cyan
+                .text "Press the key for:"
+                .byte text_move,0,20
+                .text "ESCAPE to cancel"
+                .byte text_end
+left_frog_text: .null "Left frog"
+right_frog_text:.null "Right frog"
+up_text:        .null "Up"
+down_text:      .null "Down"
+left_text:      .null "Left"
+right_text:     .null "Right"
+fire_text:      .null "Fire"
+
+;-------------------------------------------------------------------------
+; Entry: A = internal key number
+; Exit: C=0 if it can be a player key (it's in key_names)
+;-------------------------------------------------------------------------
+
+is_key_allowed:.block
+                ldx #0
+-
+                lda key_names,x
+                cmp #$ff
+                beq no
+                cmp redefine_key
+                beq yes
+                ; Skip the name.
+-
+                inx
+                lda key_names,x
+                bne -
+                inx
+                jmp --
+yes:
+                clc
+                rts
+no:
+                sec
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Which key is pressed?
+;
+; Exit: A = internal key number, or no_key
+;-------------------------------------------------------------------------
+
+get_key:.block
+                lda test_key
+                beq +
+                ldx #0
+                stx test_key
+                sec
+                sbc #1
+                rts
++
+                ; SHIFT and CTRL aren't covered by the scan from 16.
+                ldx #key_shift|$80
+                jsr test_os_key
+                bmi shift
+                ldx #key_ctrl|$80
+                jsr test_os_key
+                bmi ctrl
+                lda #$79
+                ldx #16
+                jsr osbyte      ; X = first key pressed from 16, or $ff
+                txa
+                rts
+shift:
+                lda #key_shift
+                rts
+ctrl:
+                lda #key_ctrl
+                rts
+
+; Entry: X = key number|$80. Exit: N=1 if pressed.
+test_os_key:
+                lda #$79
+                jsr osbyte
+                txa
+                rts
+                .endblock
+
+flush_keyboard_buffer:.block
+                lda #21
+                ldx #0
+                jmp osbyte
+                .endblock
+
+; Wait until no key is pressed.
+wait_no_key:.block
+-
+                lda #19
+                jsr osbyte
+                jsr flush_keyboard_buffer
+                jsr get_key
+                cmp #no_key
+                bne -
+                rts
+                .endblock
