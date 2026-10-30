@@ -146,3 +146,11 @@ redefine_step:  .fill 1
 redefine_key_index:.fill 1
 redefine_key:   .fill 1
 previous_player_keys:.fill num_player_keys
+
+; Dithering.
+pattern_parity: .fill 1
+pattern_second: .fill 1
+pattern_temp:   .fill 1
+pair_second:    .fill 1
+pair_primary:   .fill 1
+digit_line_count:.fill 1

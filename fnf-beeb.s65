@@ -72,6 +72,8 @@ sprite_row_selector_table=0
                 .include "src/logic.s65"
                 .include "src/sound.s65"
                 .include "src/data_digits.s65"
+                ; (In the padding before data_grp's alignment.)
+                .include "tia_to_beeb_pairs.s65"
                 .include "src/data_grp.s65"
                 .include "src/data_pf.s65"
 

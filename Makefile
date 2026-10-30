@@ -44,7 +44,7 @@ BEEB_LOAD:=0x1900
 
 .PHONY:beeb
 beeb: _folders
-	$(_V)$(PYTHON) ./tools/make_tia_to_beeb.py "$(BUILD)/tia_to_beeb.s65"
+	$(_V)$(PYTHON) ./tools/make_tia_to_beeb.py "$(BUILD)/tia_to_beeb.s65" "$(BUILD)/tia_to_beeb_pairs.s65"
 	$(_V)$(PYTHON) ./tools/make_sn_tables.py "$(BUILD)/sn_tables.s65"
 	$(_V)$(TASS) fnf-beeb.s65 -I "$(BUILD)" --nostart "--list=$(BUILD)/fnf-beeb.lst" "--labels=$(BUILD)/fnf-beeb.labels" "--output=$(BEEB_DEST)/$$.FNF"
 	$(_V)$(PYTHON) ./tools/make_beeb_files.py --load=$(BEEB_LOAD) --name=FNF --boot="MODE 2" --boot="*RUN FNF" "$(BEEB_DEST)/$$.FNF"

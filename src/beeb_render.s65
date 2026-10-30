@@ -37,14 +37,23 @@ role_khaki=3                    ; byte_9D (band 1 PF)
 role_lily=4                     ; byte_9E (bands 2-3 PF)
 role_frog0=5                    ; COLUP0
 role_frog1=6                    ; COLUP1 (and flies)
-role_spare=7                    ; COLUP1 for now
+role_sky2=7                     ; second colours of the dithered roles
 role_tongue=8                   ; tongue_colour
 role_score0=9                   ; pl_colours
 role_score1=10                  ; pl_colours+1
-role_score_bg=11                ; byte_87
-num_dynamic_roles=12
+role_water2=11
+num_dynamic_roles=11            ; (role_sky2 is updated with role_sky)
 role_border=12                  ; always black
+role_tree2=13
+role_khaki2=14
+role_lily2=15
 num_roles=16
+
+; The background roles are dithered: a checkerboard of the role's own
+; logical colour and its second one (role_seconds), each set from
+; tia_to_beeb_pairs. The score area uses the sky's (byte_87, its
+; background, is always the sky colour once the BG/PF swap is undone;
+; see update_palette).
 
 ;-------------------------------------------------------------------------
 ; Initialise the palette: the fixed roles get set once, and the
@@ -59,14 +68,9 @@ init_palette:.block
                 dex
                 bpl -
 
-                ldx #num_roles-1
--
+                ldx #role_border
                 lda #0
-                jsr set_role_colour
-                dex
-                cpx #num_dynamic_roles
-                bcs -
-                rts
+                jmp set_role_colour
                 .endblock
 
 ;-------------------------------------------------------------------------
@@ -94,13 +98,66 @@ update_palette:.block
                 lda role_sources,y
                 tay
                 lda $0000,y
+                ldy role_pair_seconds,x
+                cpy #skip_role
+                beq next
                 cmp role_colours,x
-                beq +
+                beq next
                 sta role_colours,x
+                cpy #solid_role
+                beq solid
+                sty pair_second
+                jsr set_role_pair
+                jmp next
+solid:
                 jsr set_role_colour
-+
+next:
                 dex
                 bpl -
+                rts
+                .endblock
+
+; For each dynamic role: its second colour if dithered, solid_role if
+; not, skip_role for role_sky2 (set along with role_sky).
+solid_role=$ff
+skip_role=$fe
+role_pair_seconds:
+                .byte role_sky2,role_water2,role_tree2,role_khaki2,role_lily2
+                .byte solid_role,solid_role,skip_role
+                .byte solid_role,solid_role,solid_role
+                .cerror *-role_pair_seconds!=num_dynamic_roles
+
+; Second logical colour for each logical colour (itself if solid).
+role_seconds:
+                .byte role_sky2,role_water2,role_tree2,role_khaki2,role_lily2
+                .byte role_frog0,role_frog1,role_sky2,role_tongue,role_score0
+                .byte role_score1,role_water2,role_border,role_tree2,role_khaki2
+                .byte role_lily2
+
+;-------------------------------------------------------------------------
+; Set a dithered role's two colours.
+;
+; Entry: X = role; pair_second = its second logical colour; A = TIA
+;        colour
+; Exit: X preserved
+;-------------------------------------------------------------------------
+
+set_role_pair:.block
+                lsr a
+                tay
+                lda tia_to_beeb_pairs,y
+                pha
+                lsr a
+                lsr a
+                lsr a
+                lsr a
+                jsr set_logical_colour
+                pla
+                and #$0f
+                stx pair_primary
+                ldx pair_second
+                jsr set_logical_colour
+                ldx pair_primary
                 rts
                 .endblock
 
@@ -121,6 +178,10 @@ set_role_colour:.block
                 lsr a
                 tay
                 lda tia_to_beeb,y
+                .endblock
+
+; Entry: X = logical colour, A = physical colour. Exit: X preserved.
+set_logical_colour:.block
                 eor #7
                 sta palette_temp
                 txa
@@ -138,31 +199,34 @@ set_role_colour:.block
 ;-------------------------------------------------------------------------
 
 draw_background:.block
-                ; Score area, blank. (draw_scores only draws the
+                ; Score area, blank (sky). (draw_scores only draws the
                 ; blocks the digits are in.)
-                lda #role_score_bg
-                jsr fill_blocks
                 lda #0
+                sta line
 -
-                pha
+                jsr set_line_parity
+                lda #role_sky
+                jsr fill_blocks
+                lda line
                 jsr draw_line
-                pla
-                clc
-                adc #1
+                inc line
+                lda line
                 cmp #pf_line
                 bne -
 
                 ; Playfield.
                 lda #pf_top_row
                 sta row
-                lda #pf_line
-                sta line
 -
                 ldx row
+                jsr set_line_parity
                 jsr build_pf_blocks
                 lda line
                 jsr draw_line
                 inc line
+                ldx row         ; (build_pf_blocks doesn't preserve X)
+                jsr set_line_parity
+                jsr build_pf_blocks
                 lda line
                 jsr draw_line
                 inc line
@@ -170,10 +234,54 @@ draw_background:.block
                 bpl -
 
                 ; Border.
+                jsr set_line_parity
                 lda #role_border
                 jsr fill_blocks
                 lda #border_line
                 jmp draw_line
+                .endblock
+
+; pattern_parity = line&1. Preserves X.
+set_line_parity:.block
+                lda line
+                and #1
+                sta pattern_parity
+                rts
+                .endblock
+
+;-------------------------------------------------------------------------
+; Screen byte for a role on this line: the checkerboard of its two
+; colours (both the same if it's solid).
+;
+; Entry: A = role; pattern_parity = line&1
+; Exit: A = byte; X preserved
+;-------------------------------------------------------------------------
+
+get_pattern_byte:.block
+                tay
+                lda role_seconds,y
+                sta pattern_second
+                lda pattern_parity
+                bne odd
+                ; Even line: own colour left, second right.
+                lda solid_bytes,y
+                and #%10101010
+                sta pattern_temp
+                ldy pattern_second
+                lda solid_bytes,y
+                and #%01010101
+                ora pattern_temp
+                rts
+odd:
+                ; Odd line: second colour left, own right.
+                lda solid_bytes,y
+                and #%01010101
+                sta pattern_temp
+                ldy pattern_second
+                lda solid_bytes,y
+                and #%10101010
+                ora pattern_temp
+                rts
                 .endblock
 
 ;-------------------------------------------------------------------------
@@ -227,8 +335,13 @@ draw_scores:.block
                 lda #score_digits_line
                 sta line
 digit_rows_loop:
-                ldx #role_score_bg
-                lda solid_bytes,x
+                lda #score_digit_row_lines
+                sta digit_line_count
+line_loop:
+                ; Background: the sky's pattern for this line.
+                jsr set_line_parity
+                lda #role_sky
+                jsr get_pattern_byte
                 sta bg_byte
 
                 ; Player 0.
@@ -239,7 +352,7 @@ digit_rows_loop:
                 lda #0
                 jsr build_digit_blocks
                 lda #score0_first_block
-                jsr draw_digit_row_lines
+                jsr draw_digit_line
 +
                 ; Player 1.
                 lda scores_to_draw
@@ -249,35 +362,25 @@ digit_rows_loop:
                 lda #2
                 jsr build_digit_blocks
                 lda #score1_first_block
-                jsr draw_digit_row_lines
+                jsr draw_digit_line
 +
-                lda line
-                clc
-                adc #score_digit_row_lines
-                sta line
+                inc line
+                dec digit_line_count
+                bne line_loop
 
                 dec row
                 bpl digit_rows_loop
                 rts
 
-; Draw a digit row's lines, for one player.
+; Draw this line of a player's digits.
 ; Entry: A = first block (score0_first_block or score1_first_block)
-draw_digit_row_lines:
+draw_digit_line:
                 sta draw_first_block
                 clc
                 adc #8
                 sta draw_end_block
                 lda line
-                ldx #score_digit_row_lines
--
-                pha
-                jsr draw_line_part
-                pla
-                clc
-                adc #1
-                dex
-                bne -
-                rts
+                jmp draw_line_part
 
 ; Entry: X = colour role; A = 2*player index
 build_digit_blocks:
@@ -314,14 +417,13 @@ build_digit_blocks:
                 .endblock
 
 ;-------------------------------------------------------------------------
-; Fill blocks with a solid colour.
+; Fill blocks with a role's pattern.
 ;
-; Entry: A = logical colour
+; Entry: A = role; pattern_parity set
 ;-------------------------------------------------------------------------
 
 fill_blocks:.block
-                tax
-                lda solid_bytes,x
+                jsr get_pattern_byte
                 sta bg_byte
                 .endblock
 fill_blocks_with_bg_byte:.block
@@ -343,16 +445,15 @@ fill_blocks_with_bg_byte:.block
 ;-------------------------------------------------------------------------
 
 build_pf_blocks:.block
-                ldy pf_row_bands,x
-                lda band_fg_roles,y
-                sty pf_bits
+                lda pf_row_bands,x
+                sta pf_bits     ; (temp)
                 tay
-                lda solid_bytes,y
+                lda band_fg_roles,y
+                jsr get_pattern_byte
                 sta fg_byte
                 ldy pf_bits
                 lda band_bg_roles,y
-                tay
-                lda solid_bytes,y
+                jsr get_pattern_byte
                 sta bg_byte
 
                 ldy #0

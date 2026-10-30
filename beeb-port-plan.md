@@ -435,7 +435,7 @@ Stella.
 5. **Later (not first pass):**
    - sound: shadow AUDC/AUDF/AUDV → SN76489 once per frame (done, see
      Milestone 5 notes)
-   - dithering / VideoNuLA palette
+   - dithering (done, see Milestone 5 notes) / VideoNuLA palette
    - tearing (done, see Milestone 5 notes)
    - NTSC speed: done as an optional 60Hz video mode rather than 6:5
      frame repeating (see Milestone 5 notes)
@@ -760,6 +760,22 @@ Milestone 5 notes:
   once loaded), as the code now reaches &4300 (screen at &4400), so
   only 256 bytes are left. Anything bigger needs more of the DFS
   workspace, or code moved below &1900 after loading.
+- Dithering: the background roles (sky, water, trees, reeds, lily
+  pads) are each a pixel checkerboard of two logical colours, set
+  together from `tia_to_beeb_pairs` (made by
+  `tools/make_tia_to_beeb.py`): pairs chosen by eye for the game's own
+  colours, otherwise the pair whose 50/50 mix (linear light) is
+  nearest in CIE Lab. Sky through the day: blue+cyan ($9A, $98),
+  blue+white ($96), solid blue ($94), black+blue ($92, $90), black.
+  Water black+blue, trees black+green, reeds black+yellow, lily pads
+  solid green. Every pair is ordered darker colour first, so dark
+  pixels share a checkerboard phase: with the trees the other way
+  round, their black and the sky's blue met in dark steps along the
+  tree edges. Second colours use logical 7, 11, 13-15 (the score area
+  uses the sky's pattern, as byte_87 is always the sky colour once the
+  BG/PF swap is undone). Sprites, digits and the tongue stay solid.
+  The two colour tables sit in alignment padding. Approved by eye in
+  b2.
 - Checked in b2 by logging the TIA shadows against the SN76489 values
   written: tongue (noise) and eating a fly (tone) convert as
   intended. Listened to in b2: sounds good.
