@@ -1,7 +1,9 @@
 # b2 HTTP API gaps - working log (agent-facing)
 
-Raw material for the human-readable b2 API document (milestone 5 item
-in beeb-port-plan.md). Append an entry whenever b2's API gets in the
+Raw material for the human-readable b2 API document,
+[b2-http-api-review.md](../b2-http-api-review.md) (milestone 5 item in
+beeb-port-plan.md); update that too if something significant is added
+here. Append an entry whenever b2's API gets in the
 way: what was being done, what was missing or awkward, the workaround,
 and what facility would have helped. Keep entries terse; the final
 document is written from these.

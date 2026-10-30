@@ -81,4 +81,6 @@ A frog left idle is taken over by the computer.
 * `src/tia*.s65`, `src/riot.s65` - 2600 only
 * `tools/` - Python scripts for examining the ROM data, building, and
   testing the BBC version in b2 (`tools/b2.py`)
+* `b2-http-api-review.md` - where b2's HTTP API fell short while
+  developing the BBC version, and what would help
 * `beeb/0` - BBC-side experiments (BeebLink volume)
